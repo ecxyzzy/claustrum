@@ -13,72 +13,82 @@ export const Maybe = <T>(x: T | null | undefined): Maybe<T> =>
 
 abstract class _Maybe<T> {
   abstract readonly type: "Just" | "Nothing";
+
+  /**
+   * Pattern match on this `Maybe`.
+   *
+   * This is the universal catamorphism over the sum type.
+   */
   abstract match<U>({ Just, Nothing }: { Just: (x: T) => U; Nothing: () => U }): U;
+
+  /**
+   * Returns `Nothing` if `this` is `Nothing`, otherwise returns `that`.
+   *
+   * @equiv `this.match({ Just: _ => that, Nothing: () => Nothing })`
+   */
+  abstract and<U>(that: Maybe<U>): Maybe<U>;
+
+  /**
+   * Returns `true` if `this` is `Nothing` or if the inner value matches the
+   * provided predicate.
+   *
+   * @equiv `this.match({ Just: x => !!f(x), Nothing => true })`
+   */
+  abstract every(f: (x: T) => unknown): boolean;
+
+  /**
+   * Returns the inner value if `this` is `Just`, otherwise throws the provided
+   * error-like object.
+   *
+   * @equiv `this.match({ Just: x => x, Nothing => throw ... })`
+   */
+  abstract expect(errLike: string | Error | (() => Error)): T;
+
+  /**
+   * Returns `this` if `this` is `Just` and the inner value matches the provided
+   * predicate, otherwise returns `Nothing`.
+   *
+   * @equiv `this.match({ Just: x => (f(x) ? this : Nothing), Nothing: () => Nothing })`
+   */
+  abstract filter(f: (x: T) => unknown): Maybe<T>;
+
+  /**
+   * Returns `this` if `this` is `Just` and the inner value does not match the
+   * provided predicate, otherwise returns `Nothing`.
+   *
+   * @equiv `this.match({ Just: x => (f(x) ? Nothing : this), Nothing: () => Nothing })`
+   */
+  abstract filterNot(f: (x: T) => unknown): Maybe<T>;
+
+  /**
+   * Returns the provided function applied to the inner value if `this` is
+   * `Just`, otherwise returns `Nothing`.
+   *
+   * @equiv `this.match({ Just: x => f(x), Nothing: () => Nothing })`
+   */
+  abstract flatMap<U>(f: (x: T) => Maybe<U>): Maybe<U>;
+
+  /**
+   * Runs the provided side-effectful function on the inner value if `this` is
+   * `Just`, otherwise does nothing. Consumes the `Maybe` in the process.
+   *
+   * @equiv `this.match({ Just: x => f(x), Nothing: () => {} })`
+   */
+  abstract forEach(f: (x: T) => unknown): void;
+
+  /**
+   * Returns `true` if `this` is `Just` and the inner value is equal to the
+   * provided value, otherwise returns `false`.
+   *
+   * @equiv `this.match({ Just: x => x === y, Nothing: () => false })`
+   */
+  abstract includes(y: T): boolean;
 
   static all<A>(this: void, ms: [Maybe<A>]): Maybe<[A]>;
   static all<A, B>(this: void, ms: [Maybe<A>, Maybe<B>]): Maybe<[A, B]>;
   static all<A, B, C>(this: void, ms: [Maybe<A>, Maybe<B>, Maybe<C>]): Maybe<[A, B, C]>;
   static all(this: void, ms: Maybe<unknown>[]): Maybe<unknown[]> {
     return ms.some(m => m.isNothing()) ? Nothing : Just(ms.map(m => m.unwrap()));
-  }
-
-  and<U>(that: Maybe<U>): Maybe<U> {
-    return this.match({
-      Just: () => that,
-      Nothing: () => Nothing,
-    });
-  }
-
-  every(f: (x: T) => unknown): boolean {
-    return this.match({
-      Just: x => !!f(x),
-      Nothing: () => true,
-    });
-  }
-
-  expect(errLike: string | Error | (() => Error)): T {
-    return this.match({
-      Just: x => x,
-      Nothing: () => {
-        switch (typeof errLike) {
-          case "string":
-            throw new Error(errLike);
-          case "object":
-            throw errLike;
-          case "function":
-            throw errLike();
-        }
-      },
-    });
-  }
-
-  filter(this: Maybe<T>, f: (x: T) => unknown): Maybe<T> {
-    return this.match({
-      Just: x => (f(x) ? this : Nothing),
-      Nothing: () => Nothing,
-    });
-  }
-
-  filterNot(this: Maybe<T>, f: (x: T) => unknown): Maybe<T> {
-    return this.filter(x => !f(x));
-  }
-
-  flatMap<U>(f: (x: T) => Maybe<U>): Maybe<U> {
-    return this.match({
-      Just: x => f(x),
-      Nothing: () => Nothing,
-    });
-  }
-
-  forEach(f: (x: T) => unknown): void {
-    this.match({
-      Just: x => f(x),
-      Nothing: () => {},
-    });
-  }
-
-  includes(y: T): boolean {
-    return this.some(x => x === y);
   }
 
   inspect(this: Maybe<T>, f: (x: T) => unknown): Maybe<T> {
@@ -282,6 +292,38 @@ class _Just<T> extends _Maybe<T> {
   match<U>({ Just }: { Just: (x: T) => U }) {
     return Just(this.v);
   }
+
+  and<U>(that: Maybe<U>) {
+    return that;
+  }
+
+  every(f: (x: T) => unknown) {
+    return !!f(this.v);
+  }
+
+  expect() {
+    return this.v;
+  }
+
+  filter(f: (x: T) => unknown) {
+    return f(this.v) ? this : Nothing;
+  }
+
+  filterNot(f: (x: T) => unknown) {
+    return f(this.v) ? Nothing : this;
+  }
+
+  flatMap<U>(f: (x: T) => Maybe<U>) {
+    return f(this.v);
+  }
+
+  forEach(f: (x: T) => unknown) {
+    f(this.v);
+  }
+
+  includes(y: T): boolean {
+    return this.v === y;
+  }
 }
 
 class _Nothing<T> extends _Maybe<T> {
@@ -289,6 +331,43 @@ class _Nothing<T> extends _Maybe<T> {
 
   match<U>({ Nothing }: { Nothing: () => U }) {
     return Nothing();
+  }
+
+  and() {
+    return Nothing;
+  }
+
+  every() {
+    return true;
+  }
+
+  expect(errLike: string | Error | (() => Error)): T {
+    switch (typeof errLike) {
+      case "string":
+        throw new Error(errLike);
+      case "object":
+        throw errLike;
+      case "function":
+        throw errLike();
+    }
+  }
+
+  filter() {
+    return Nothing;
+  }
+
+  filterNot() {
+    return Nothing;
+  }
+
+  flatMap() {
+    return Nothing;
+  }
+
+  forEach() {}
+
+  includes() {
+    return false;
   }
 }
 
