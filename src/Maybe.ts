@@ -15,10 +15,10 @@ abstract class _Maybe<T> {
   abstract readonly type: "Just" | "Nothing";
   abstract match<U>({ Just, Nothing }: { Just: (x: T) => U; Nothing: () => U }): U;
 
-  static all<A>(ms: [Maybe<A>]): Maybe<[A]>;
-  static all<A, B>(ms: [Maybe<A>, Maybe<B>]): Maybe<[A, B]>;
-  static all<A, B, C>(ms: [Maybe<A>, Maybe<B>, Maybe<C>]): Maybe<[A, B, C]>;
-  static all(ms: Maybe<unknown>[]): Maybe<unknown[]> {
+  static all<A>(this: void, ms: [Maybe<A>]): Maybe<[A]>;
+  static all<A, B>(this: void, ms: [Maybe<A>, Maybe<B>]): Maybe<[A, B]>;
+  static all<A, B, C>(this: void, ms: [Maybe<A>, Maybe<B>, Maybe<C>]): Maybe<[A, B, C]>;
+  static all(this: void, ms: Maybe<unknown>[]): Maybe<unknown[]> {
     return ms.some(m => m.isNothing()) ? Nothing : Just(ms.map(m => m.unwrap()));
   }
 
