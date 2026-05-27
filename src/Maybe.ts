@@ -1,4 +1,6 @@
+import { Dict } from "./Dict.ts";
 import { type Either, Left, Right } from "./Either.ts";
+import { FSet } from "./FSet.ts";
 import { Seq } from "./Seq.ts";
 import { Failure, Success, type Try } from "./Try.ts";
 
@@ -215,6 +217,27 @@ abstract class _Maybe<T> {
     return this.match({
       Just: ([a, b, c]) => [Maybe(a), Maybe(b), Maybe(c)],
       Nothing: () => [Nothing, Nothing, Nothing],
+    });
+  }
+
+  toDictAsKey<V>(v: V): Dict<T, V> {
+    return this.match({
+      Just: x => Dict([x, v]),
+      Nothing: () => Dict(),
+    });
+  }
+
+  toDictAsValue<K>(k: K): Dict<K, T> {
+    return this.match({
+      Just: x => Dict([k, x]),
+      Nothing: () => Dict(),
+    });
+  }
+
+  toFSet(): FSet<T> {
+    return this.match({
+      Just: x => FSet(x),
+      Nothing: FSet,
     });
   }
 
