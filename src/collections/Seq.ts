@@ -7,6 +7,10 @@ export const Seq = <T>(...xs: T[]): Seq<T> => new _Seq(xs);
 class _Seq<T> implements Iterable<T> {
   constructor(private readonly xs: readonly T[]) {}
 
+  static from<T>(this: void, it: Iterable<T>): Seq<T> {
+    return new _Seq([...it]);
+  }
+
   length(): number {
     return this.xs.length;
   }
@@ -15,3 +19,5 @@ class _Seq<T> implements Iterable<T> {
     return this.xs[Symbol.iterator]();
   }
 }
+
+Seq.from = _Seq.from;
