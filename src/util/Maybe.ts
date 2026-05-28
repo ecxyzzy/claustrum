@@ -145,6 +145,29 @@ abstract class _Maybe<T> {
     return ms.some(m => m.isNothing()) ? Nothing : Just(ms.map(m => m.unwrap()));
   }
 
+  /**
+   * Converts a tuple of `Maybe` instances to a `Maybe` of a tuple. If any
+   * element in the tuple is `Nothing`, returns `Nothing`; otherwise, returns a
+   * `Just` containing the value of the function applied to a tuple of all
+   * unwrapped values.
+   *
+   * This is `traverse` on `Traversable`, implemented on the effect `Maybe`.
+   */
+  static allWith<A, A1>(this: void, ms: [Maybe<A>], f: (x: [A]) => [A1]): Maybe<[A1]>;
+  static allWith<A, B, A1, B1>(
+    this: void,
+    ms: [Maybe<A>, Maybe<B>],
+    f: (x: [A, B]) => [A1, B1],
+  ): Maybe<[A1, B1]>;
+  static allWith<A, B, C, A1, B1, C1>(
+    this: void,
+    ms: [Maybe<A>, Maybe<B>, Maybe<C>],
+    f: (x: [A, B, C]) => [A1, B1, C1],
+  ): Maybe<[A1, B1, C1]>;
+  static allWith(this: void, ms: Maybe<unknown>[], f: (x: any) => unknown[]): Maybe<unknown[]> {
+    return ms.some(m => m.isNothing()) ? Nothing : Just(f(ms.map(m => m.unwrap())));
+  }
+
   mapOrElse<U>(g: () => U, f: (x: T) => U): U {
     return this.match({
       Just: x => f(x),
