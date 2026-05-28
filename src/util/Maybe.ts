@@ -7,7 +7,7 @@ import { Failure, Success, type Try } from "@/util/Try.ts";
 /**
  * Represents an optional value.
  */
-export type Maybe<T> = Just<T> | Nothing;
+export type Maybe<T> = Just<T> | Nothing<T>;
 export const Maybe = <T>(x: T | null | undefined): Maybe<T> =>
   x !== null && x !== undefined ? Just(x) : Nothing;
 
@@ -42,7 +42,7 @@ abstract class _Maybe<T> {
    *
    * @equiv `this.match({ Just: x => x, Nothing => throw ... })`
    */
-  abstract expect(errLike: string | Error | (() => Error)): T;
+  abstract expect(errLike: string | Error | (() => Error)): NonNullable<T>;
 
   /**
    * Returns `this` if `this` is `Just` and the inner value matches the provided
@@ -100,7 +100,7 @@ abstract class _Maybe<T> {
     return this.type === "Just";
   }
 
-  isNothing(): this is Nothing {
+  isNothing(): this is Nothing<T> {
     return this.type === "Nothing";
   }
 
@@ -289,35 +289,35 @@ class _Just<T> extends _Maybe<T> {
     super();
   }
 
-  match<U>({ Just }: { Just: (x: T) => U }) {
+  match<U>({ Just }: { Just: (x: T) => U }): U {
     return Just(this.v);
   }
 
-  and<U>(that: Maybe<U>) {
+  and<U>(that: Maybe<U>): Maybe<U> {
     return that;
   }
 
-  every(f: (x: T) => unknown) {
+  every(f: (x: T) => unknown): boolean {
     return !!f(this.v);
   }
 
-  expect() {
+  expect(): NonNullable<T> {
     return this.v;
   }
 
-  filter(f: (x: T) => unknown) {
+  filter(f: (x: T) => unknown): Maybe<T> {
     return f(this.v) ? this : Nothing;
   }
 
-  filterNot(f: (x: T) => unknown) {
+  filterNot(f: (x: T) => unknown): Maybe<T> {
     return f(this.v) ? Nothing : this;
   }
 
-  flatMap<U>(f: (x: T) => Maybe<U>) {
+  flatMap<U>(f: (x: T) => Maybe<U>): Maybe<U> {
     return f(this.v);
   }
 
-  forEach(f: (x: T) => unknown) {
+  forEach(f: (x: T) => unknown): void {
     f(this.v);
   }
 
@@ -326,22 +326,22 @@ class _Just<T> extends _Maybe<T> {
   }
 }
 
-class _Nothing extends _Maybe<never> {
+class _Nothing<T> extends _Maybe<T> {
   readonly type = "Nothing";
 
-  match<U>({ Nothing }: { Nothing: () => U }) {
+  match<U>({ Nothing }: { Nothing: () => U }): U {
     return Nothing();
   }
 
-  and() {
+  and<U>(): Maybe<U> {
     return Nothing;
   }
 
-  every() {
+  every(): boolean {
     return true;
   }
 
-  expect(errLike: string | Error | (() => Error)): never {
+  expect(errLike: string | Error | (() => Error)): NonNullable<T> {
     switch (typeof errLike) {
       case "string":
         throw new Error(errLike);
@@ -352,27 +352,27 @@ class _Nothing extends _Maybe<never> {
     }
   }
 
-  filter() {
+  filter(): Maybe<T> {
     return Nothing;
   }
 
-  filterNot() {
+  filterNot(): Maybe<T> {
     return Nothing;
   }
 
-  flatMap() {
+  flatMap<U>(): Maybe<U> {
     return Nothing;
   }
 
-  forEach() {}
+  forEach(): void {}
 
-  includes() {
+  includes(): boolean {
     return false;
   }
 }
 
 export type Just<T> = _Just<T>;
-export type Nothing = _Nothing;
+export type Nothing<T> = _Nothing<T>;
 
 export const Just = <T>(x: NonNullable<T>): Maybe<T> => new _Just(x);
 export const Nothing: Maybe<never> = new _Nothing();
