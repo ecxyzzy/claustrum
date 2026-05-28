@@ -380,11 +380,11 @@ class _Just<T> extends _Maybe<T> {
     return this;
   }
 
-  isJust(): boolean {
+  isJust(): this is Just<T> {
     return true;
   }
 
-  isNothing(): boolean {
+  isNothing(): this is Nothing<T> {
     return false;
   }
 
@@ -445,11 +445,11 @@ class _Nothing<T> extends _Maybe<T> {
     return Nothing;
   }
 
-  isJust(): boolean {
+  isJust(): this is Just<T> {
     return false;
   }
 
-  isNothing(): boolean {
+  isNothing(): this is Nothing<T> {
     return true;
   }
 
