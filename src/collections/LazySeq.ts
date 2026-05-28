@@ -39,10 +39,10 @@ class _LazySeq<T> implements Iterable<T> {
   static generate(this: void, start: number, step: number): LazySeq<number>;
   static generate(this: void, start: number, step?: number): LazySeq<number> {
     if (!Number.isSafeInteger(start)) {
-      throw new Error(`LazySeq.generate: expected safe integer start, got ${start}`);
+      throw new TypeError(`LazySeq.generate: expected safe integer start, got ${start}`);
     }
     if (step && !Number.isSafeInteger(step)) {
-      throw new Error(`LazySeq.generate: expected safe integer or undefined step, got ${step}`);
+      throw new TypeError(`LazySeq.generate: expected safe integer or undefined step, got ${step}`);
     }
     return new _LazySeq(function* () {
       for (let i = start; ; i += step ?? 1) {
