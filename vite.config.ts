@@ -11,6 +11,10 @@ export default defineConfig({
       compress: true,
       mangle: true,
     },
+    entry: {
+      collections: "./src/collections/index.ts",
+      util: "./src/util/index.ts",
+    },
   },
   lint: {
     options: {

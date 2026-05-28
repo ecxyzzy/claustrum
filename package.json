@@ -16,8 +16,10 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
-    ".": "./dist/index.mjs",
+    "./collections": "./dist/collections.mjs",
+    "./util": "./dist/util.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {
