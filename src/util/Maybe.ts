@@ -1,13 +1,17 @@
-import { Dict } from "@/collections/Dict.ts";
-import { FSet } from "@/collections/FSet.ts";
-import { Seq } from "@/collections/Seq.ts";
-import { type Either, Left, Right } from "@/util/Either.ts";
-import { Failure, Success, type Try } from "@/util/Try.ts";
+import { Dict } from "@/collections/Dict";
+import { FSet } from "@/collections/FSet";
+import { Seq } from "@/collections/Seq";
+import { type Either, Left, Right } from "@/util/Either";
+import { Failure, Success, type Try } from "@/util/Try";
 
 /**
  * Represents an optional value.
  */
 export type Maybe<T> = Just<T> | Nothing<T>;
+/**
+ * Constructs a new `Maybe` instance. Returns `Just` containing the provided
+ * value if it is not nullish, otherwise returns `Nothing`.
+ */
 export const Maybe = <T>(x: T | null | undefined): Maybe<T> =>
   x !== null && x !== undefined ? Just(x) : Nothing;
 
@@ -17,7 +21,8 @@ abstract class _Maybe<T> {
   /**
    * Pattern match on this `Maybe`.
    *
-   * This is the universal catamorphism over the sum type.
+   * This is the universal catamorphism over the sum type. All operations on
+   * `Maybe` may be written in terms of `this.match`.
    */
   abstract match<U>({ Just, Nothing }: { Just: (x: T) => U; Nothing: () => U }): U;
 
@@ -31,6 +36,8 @@ abstract class _Maybe<T> {
   /**
    * Returns `true` if `this` is `Nothing` or if the inner value matches the
    * provided predicate.
+   *
+   * This is the universal quantifier (`\forall`).
    *
    * @equiv `this.match({ Just: x => !!f(x), Nothing => true })`
    */
@@ -64,6 +71,8 @@ abstract class _Maybe<T> {
    * Returns the provided function applied to the inner value if `this` is
    * `Just`, otherwise returns `Nothing`.
    *
+   * This is monadic bind (`>>=`).
+   *
    * @equiv `this.match({ Just: x => f(x), Nothing: () => Nothing })`
    */
   abstract flatMap<U>(f: (x: T) => Maybe<U>): Maybe<U>;
@@ -84,38 +93,56 @@ abstract class _Maybe<T> {
    */
   abstract includes(y: T): boolean;
 
+  /**
+   * Runs the provided side-effectful function on the inner value if `this` is
+   * `Just`, otherwise does nothing. Returns the same `Maybe` after `f` is done.
+   */
+  abstract inspect(f: (x: T) => unknown): Maybe<T>;
+
+  /**
+   * Returns `true` if `this` is `Just`.
+   *
+   * @equiv `this.match({ Just: _ => true, Nothing: () => false })`
+   */
+  abstract isJust(): boolean;
+
+  /**
+   * Returns `true` if `this` is `Nothing`.
+   *
+   * @equiv `this.match({ Just: _ => false, Nothing: () => true })`
+   */
+  abstract isNothing(): boolean;
+
+  /**
+   * If `this` is `Just`, returns a new `Maybe` wrapping the value of the
+   * function applied to the inner value, otherwise returns `Nothing`.
+   *
+   * This is functorial `fmap`.
+   *
+   * @equiv `this.match({ Just: x => Maybe(f(x)), Nothing: () => Nothing })`
+   */
+  abstract map<U>(f: (x: T) => U | null | undefined): Maybe<U>;
+
+  /**
+   * If `this` is `Just`, returns the function applied to the inner value,
+   * otherwise returns the alternative value.
+   *
+   * @equiv `this.match({ Just: x => f(x), Nothing: () => y })`
+   */
+  abstract mapOr<U>(y: U, f: (x: T) => U): U;
+
+  /**
+   * Converts a tuple of `Maybe` instances to a `Maybe` of a tuple. If any
+   * element in the tuple is `Nothing`, returns `Nothing`; otherwise, returns a
+   * `Just` containing a tuple of all unwrapped elements.
+   *
+   * This is `sequence` on `Traversable`, implemented on the effect `Maybe`.
+   */
   static all<A>(this: void, ms: [Maybe<A>]): Maybe<[A]>;
   static all<A, B>(this: void, ms: [Maybe<A>, Maybe<B>]): Maybe<[A, B]>;
   static all<A, B, C>(this: void, ms: [Maybe<A>, Maybe<B>, Maybe<C>]): Maybe<[A, B, C]>;
   static all(this: void, ms: Maybe<unknown>[]): Maybe<unknown[]> {
     return ms.some(m => m.isNothing()) ? Nothing : Just(ms.map(m => m.unwrap()));
-  }
-
-  inspect(this: Maybe<T>, f: (x: T) => unknown): Maybe<T> {
-    this.forEach(f);
-    return this;
-  }
-
-  isJust(): this is Just<T> {
-    return this.type === "Just";
-  }
-
-  isNothing(): this is Nothing<T> {
-    return this.type === "Nothing";
-  }
-
-  map<U>(f: (x: T) => U | null | undefined): Maybe<U> {
-    return this.match({
-      Just: x => Maybe(f(x)),
-      Nothing: () => Nothing,
-    });
-  }
-
-  mapOr<U>(val: U, f: (x: T) => U): U {
-    return this.match({
-      Just: x => f(x),
-      Nothing: () => val,
-    });
   }
 
   mapOrElse<U>(g: () => U, f: (x: T) => U): U {
@@ -324,6 +351,27 @@ class _Just<T> extends _Maybe<T> {
   includes(y: T): boolean {
     return this.v === y;
   }
+
+  inspect(f: (x: T) => unknown): Maybe<T> {
+    this.forEach(f);
+    return this;
+  }
+
+  isJust(): boolean {
+    return true;
+  }
+
+  isNothing(): boolean {
+    return false;
+  }
+
+  map<U>(f: (x: T) => U | null | undefined): Maybe<U> {
+    return Maybe(f(this.v));
+  }
+
+  mapOr<U>(_y: U, f: (x: T) => U): U {
+    return f(this.v);
+  }
 }
 
 class _Nothing<T> extends _Maybe<T> {
@@ -368,6 +416,26 @@ class _Nothing<T> extends _Maybe<T> {
 
   includes(): boolean {
     return false;
+  }
+
+  inspect(): Maybe<T> {
+    return Nothing;
+  }
+
+  isJust(): boolean {
+    return false;
+  }
+
+  isNothing(): boolean {
+    return true;
+  }
+
+  map<U>(): Maybe<U> {
+    return Nothing;
+  }
+
+  mapOr<U>(y: U): U {
+    return y;
   }
 }
 
