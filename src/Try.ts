@@ -1,7 +1,7 @@
 /**
  * Represents a computation that may throw.
  */
-export type Try<T> = Success<T> | Failure<T>;
+export type Try<T> = Success<T> | Failure;
 export const Try = <T>(f: () => T): Try<T> => {
   try {
     return Success(f());
@@ -27,7 +27,7 @@ class _Success<T> extends _Try<T> {
   }
 }
 
-class _Failure<T> extends _Try<T> {
+class _Failure extends _Try<never> {
   readonly type = "Failure";
 
   constructor(private readonly e: unknown) {
@@ -40,7 +40,7 @@ class _Failure<T> extends _Try<T> {
 }
 
 export type Success<T> = _Success<T>;
-export type Failure<T> = _Failure<T>;
+export type Failure = _Failure;
 
 export const Success = <T>(v: T): Try<T> => new _Success(v);
-export const Failure = <T>(e: unknown): Try<T> => new _Failure(e);
+export const Failure = (e: unknown): Try<never> => new _Failure(e);

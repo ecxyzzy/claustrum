@@ -7,7 +7,7 @@ import { Failure, Success, type Try } from "./Try.ts";
 /**
  * Represents an optional value.
  */
-export type Maybe<T> = Just<T> | Nothing<T>;
+export type Maybe<T> = Just<T> | Nothing;
 export const Maybe = <T>(x: T | null | undefined): Maybe<T> =>
   x !== null && x !== undefined ? Just(x) : Nothing;
 
@@ -100,7 +100,7 @@ abstract class _Maybe<T> {
     return this.type === "Just";
   }
 
-  isNothing(): this is Nothing<T> {
+  isNothing(): this is Nothing {
     return this.type === "Nothing";
   }
 
@@ -326,7 +326,7 @@ class _Just<T> extends _Maybe<T> {
   }
 }
 
-class _Nothing<T> extends _Maybe<T> {
+class _Nothing extends _Maybe<never> {
   readonly type = "Nothing";
 
   match<U>({ Nothing }: { Nothing: () => U }) {
@@ -341,7 +341,7 @@ class _Nothing<T> extends _Maybe<T> {
     return true;
   }
 
-  expect(errLike: string | Error | (() => Error)): T {
+  expect(errLike: string | Error | (() => Error)): never {
     switch (typeof errLike) {
       case "string":
         throw new Error(errLike);
@@ -372,7 +372,7 @@ class _Nothing<T> extends _Maybe<T> {
 }
 
 export type Just<T> = _Just<T>;
-export type Nothing<T> = _Nothing<T>;
+export type Nothing = _Nothing;
 
 export const Just = <T>(x: NonNullable<T>): Maybe<T> => new _Just(x);
 export const Nothing: Maybe<never> = new _Nothing();
