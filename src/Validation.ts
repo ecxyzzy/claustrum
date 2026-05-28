@@ -1,4 +1,4 @@
-import { Seq } from "./Seq.ts";
+import { Seq } from "@/Seq";
 
 /**
  * Represents a valid value, or a sequence of errors explaining why the value

@@ -1,8 +1,8 @@
-import { Dict } from "./Dict.ts";
-import { type Either, Left, Right } from "./Either.ts";
-import { FSet } from "./FSet.ts";
-import { Seq } from "./Seq.ts";
-import { Failure, Success, type Try } from "./Try.ts";
+import { Dict } from "@/Dict";
+import { type Either, Left, Right } from "@/Either";
+import { FSet } from "@/FSet";
+import { Seq } from "@/Seq";
+import { Failure, Success, type Try } from "@/Try";
 
 /**
  * Represents an optional value.
