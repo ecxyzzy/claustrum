@@ -1,7 +1,7 @@
 export type Dict<K, V> = _Dict<K, V>;
 export const Dict = <K, V>(...pairs: [K, V][]): Dict<K, V> => new _Dict(pairs);
 
-class _Dict<K, V> {
+class _Dict<K, V> implements Iterable<[K, V]> {
   private readonly d: ReadonlyMap<K, V>;
 
   constructor(pairs: Iterable<[K, V]>) {
@@ -10,5 +10,9 @@ class _Dict<K, V> {
 
   size(): number {
     return this.d.size;
+  }
+
+  [Symbol.iterator]() {
+    return this.d[Symbol.iterator]();
   }
 }
