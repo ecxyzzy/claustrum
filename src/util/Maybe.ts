@@ -132,6 +132,23 @@ abstract class _Maybe<T> {
   abstract mapOr<U>(y: U, f: (x: T) => U): U;
 
   /**
+   * If `this` is `Just`, returns the function applied to the inner value,
+   * otherwise returns the result of the alternative function.
+   *
+   * @equiv `this.match({ Just: x => f(x), Nothing: () => g() })`
+   */
+  abstract mapOrElse<U>(g: () => U, f: (x: T) => U): U;
+
+  /**
+   * Returns a new `Maybe` containing the narrowed inner value if `this` is
+   * `Just` and the inner value matches the provided predicate, otherwise
+   * returns `Nothing`.
+   *
+   * @equiv `this.match({ Just: x => (f(x) ? Maybe(x) : Nothing), Nothing: () => Nothing })`
+   */
+  abstract narrow<U extends T>(f: (x: T) => x is U): Maybe<U>;
+
+  /**
    * Converts a tuple of `Maybe` instances to a `Maybe` of a tuple. If any
    * element in the tuple is `Nothing`, returns `Nothing`; otherwise, returns a
    * `Just` containing a tuple of all unwrapped elements.
@@ -166,20 +183,6 @@ abstract class _Maybe<T> {
   ): Maybe<[A1, B1, C1]>;
   static allWith(this: void, ms: Maybe<unknown>[], f: (x: any) => unknown[]): Maybe<unknown[]> {
     return ms.some(m => m.isNothing()) ? Nothing : Just(f(ms.map(m => m.unwrap())));
-  }
-
-  mapOrElse<U>(g: () => U, f: (x: T) => U): U {
-    return this.match({
-      Just: x => f(x),
-      Nothing: g,
-    });
-  }
-
-  narrow<U extends T>(f: (x: T) => x is U): Maybe<U> {
-    return this.match({
-      Just: x => (f(x) ? Maybe(x) : Nothing),
-      Nothing: () => Nothing,
-    });
   }
 
   or(this: Maybe<T>, that: Maybe<T>): Maybe<T> {
@@ -395,6 +398,14 @@ class _Just<T> extends _Maybe<T> {
   mapOr<U>(_y: U, f: (x: T) => U): U {
     return f(this.v);
   }
+
+  mapOrElse<U>(_g: () => U, f: (x: T) => U): U {
+    return f(this.v);
+  }
+
+  narrow<U extends T>(f: (x: T) => x is U): Maybe<U> {
+    return f(this.v) ? Maybe(this.v) : Nothing;
+  }
 }
 
 class _Nothing<T> extends _Maybe<T> {
@@ -459,6 +470,14 @@ class _Nothing<T> extends _Maybe<T> {
 
   mapOr<U>(y: U): U {
     return y;
+  }
+
+  mapOrElse<U>(g: () => U): U {
+    return g();
+  }
+
+  narrow<U extends T>(): Maybe<U> {
+    return Nothing;
   }
 }
 
