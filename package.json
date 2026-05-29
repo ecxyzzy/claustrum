@@ -18,8 +18,20 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    ".": "./dist/index.mjs",
+    "./adt": "./dist/adt.mjs",
+    "./adt/Either": "./dist/adt/Either.mjs",
+    "./adt/Maybe": "./dist/adt/Maybe.mjs",
+    "./adt/Try": "./dist/adt/Try.mjs",
+    "./adt/Validation": "./dist/adt/Validation.mjs",
     "./collections": "./dist/collections.mjs",
-    "./util": "./dist/util.mjs",
+    "./collections/Dict": "./dist/collections/Dict.mjs",
+    "./collections/FSet": "./dist/collections/FSet.mjs",
+    "./collections/LazySeq": "./dist/collections/LazySeq.mjs",
+    "./collections/Seq": "./dist/collections/Seq.mjs",
+    "./numeric": "./dist/numeric.mjs",
+    "./numeric/RichInt": "./dist/numeric/RichInt.mjs",
+    "./numeric/SafeInt": "./dist/numeric/SafeInt.mjs",
     "./package.json": "./package.json"
   },
   "publishConfig": {
