@@ -1,8 +1,8 @@
+import { type Either, Left, Right } from "@/adt/Either";
+import { Failure, Success, type Try } from "@/adt/Try";
 import { Dict } from "@/collections/Dict";
 import { FSet } from "@/collections/FSet";
 import { Seq } from "@/collections/Seq";
-import { type Either, Left, Right } from "@/util/Either";
-import { Failure, Success, type Try } from "@/util/Try";
 
 /**
  * Represents an optional value.
