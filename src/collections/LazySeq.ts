@@ -1,4 +1,6 @@
 import { Seq } from "@/collections/Seq";
+import { RichInt } from "@/numeric/RichInt";
+import type { SafeInt } from "@/numeric/SafeInt";
 
 export type LazySeq<T> = _LazySeq<T>;
 export const LazySeq = <T>(left: T | LazySeq<T>, right: LazySeq<T>): LazySeq<T> => {
@@ -35,30 +37,26 @@ class _LazySeq<T> implements Iterable<T> {
     });
   }
 
-  static generate(this: void, start: number): LazySeq<number>;
-  static generate(this: void, start: number, step: number): LazySeq<number>;
-  static generate(this: void, start: number, step?: number): LazySeq<number> {
-    if (!Number.isSafeInteger(start)) {
-      throw new TypeError(`LazySeq.generate: expected safe integer start, got ${start}`);
-    }
-    if (step && !Number.isSafeInteger(step)) {
-      throw new TypeError(`LazySeq.generate: expected safe integer or undefined step, got ${step}`);
-    }
+  static generate(this: void, start: SafeInt): LazySeq<RichInt>;
+  static generate(this: void, start: SafeInt, step: SafeInt): LazySeq<RichInt>;
+  static generate(this: void, start: SafeInt, step?: SafeInt): LazySeq<RichInt> {
     return new _LazySeq(function* () {
-      for (let i = start; ; i += step ?? 1) {
-        yield i;
+      for (
+        let i = RichInt(start).valueOf();
+        ;
+        i += step !== undefined ? RichInt(step).valueOf() : 1
+      ) {
+        yield RichInt(i);
       }
     });
   }
 
-  drop(n: number): LazySeq<T> {
-    if (!Number.isSafeInteger(n)) {
-      throw new TypeError(`LazySeq.drop: expected safe integer n, got ${n}`);
-    }
-    if (n < 1) return this;
+  drop(n: SafeInt): LazySeq<T> {
+    const rn = RichInt(n);
+    if (rn.valueOf() < 1) return this;
     const g = this.g();
     return new _LazySeq(function* () {
-      for (let i = 0; i < n; ++i) {
+      for (let i = 0; i < rn.valueOf(); ++i) {
         g.next();
       }
       for (const x of g) {
@@ -67,14 +65,12 @@ class _LazySeq<T> implements Iterable<T> {
     });
   }
 
-  take(n: number): LazySeq<T> {
-    if (!Number.isSafeInteger(n)) {
-      throw new TypeError(`LazySeq.take: expected safe integer n, got ${n}`);
-    }
-    if (n < 1) return LazySeq.empty();
+  take(n: SafeInt): LazySeq<T> {
+    const rn = RichInt(n);
+    if (rn.valueOf() < 1) return LazySeq.empty();
     const g = this.g();
     return new _LazySeq(function* () {
-      for (let i = 0; i < n; ++i) {
+      for (let i = 0; i < rn.valueOf(); ++i) {
         const next = g.next();
         if (next.done) return;
         yield next.value;
