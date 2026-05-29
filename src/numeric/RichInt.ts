@@ -26,3 +26,5 @@ class _RichInt {
     return this.n;
   }
 }
+
+RichInt.from = _RichInt.from;
