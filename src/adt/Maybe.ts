@@ -152,37 +152,12 @@ abstract class _Maybe<T> {
    * Converts a tuple of `Maybe` instances to a `Maybe` of a tuple. If any
    * element in the tuple is `Nothing`, returns `Nothing`; otherwise, returns a
    * `Just` containing a tuple of all unwrapped elements.
-   *
-   * This is `sequence` on `Traversable`, implemented on the effect `Maybe`.
    */
   static all<A>(this: void, ms: [Maybe<A>]): Maybe<[A]>;
   static all<A, B>(this: void, ms: [Maybe<A>, Maybe<B>]): Maybe<[A, B]>;
   static all<A, B, C>(this: void, ms: [Maybe<A>, Maybe<B>, Maybe<C>]): Maybe<[A, B, C]>;
   static all(this: void, ms: Maybe<unknown>[]): Maybe<unknown[]> {
-    return ms.some(m => m.isNothing()) ? Nothing : Just(ms.map(m => m.unwrap()));
-  }
-
-  /**
-   * Converts a tuple of `Maybe` instances to a `Maybe` of a tuple. If any
-   * element in the tuple is `Nothing`, returns `Nothing`; otherwise, returns a
-   * `Just` containing the value of the function applied to a tuple of all
-   * unwrapped values.
-   *
-   * This is `traverse` on `Traversable`, implemented on the effect `Maybe`.
-   */
-  static allWith<A, A1>(this: void, ms: [Maybe<A>], f: (x: [A]) => [A1]): Maybe<[A1]>;
-  static allWith<A, B, A1, B1>(
-    this: void,
-    ms: [Maybe<A>, Maybe<B>],
-    f: (x: [A, B]) => [A1, B1],
-  ): Maybe<[A1, B1]>;
-  static allWith<A, B, C, A1, B1, C1>(
-    this: void,
-    ms: [Maybe<A>, Maybe<B>, Maybe<C>],
-    f: (x: [A, B, C]) => [A1, B1, C1],
-  ): Maybe<[A1, B1, C1]>;
-  static allWith(this: void, ms: Maybe<unknown>[], f: (x: any) => unknown[]): Maybe<unknown[]> {
-    return ms.some(m => m.isNothing()) ? Nothing : Just(f(ms.map(m => m.unwrap())));
+    return ms.some(Maybe.isNothing) ? Nothing : Just(ms.map(Maybe.unwrap));
   }
 
   or(this: Maybe<T>, that: Maybe<T>): Maybe<T> {
@@ -334,6 +309,8 @@ abstract class _Maybe<T> {
 }
 
 Maybe.all = _Maybe.all;
+Maybe.isNothing = <T>(m: Maybe<T>) => m.isNothing();
+Maybe.unwrap = <T>(m: Maybe<T>) => m.unwrap();
 
 class _Just<T> extends _Maybe<T> {
   readonly type = "Just";
