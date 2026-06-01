@@ -3,6 +3,7 @@ import { Failure, Success, type Try } from "@/adt/Try";
 import { Dict } from "@/collections/Dict";
 import { FSet } from "@/collections/FSet";
 import { Seq } from "@/collections/Seq";
+import type { Nullable } from "@/types/Nullable";
 
 /**
  * Represents an optional value.
@@ -12,7 +13,7 @@ export type Maybe<T> = Just<T> | Nothing<T>;
  * Constructs a new `Maybe` instance. Returns `Just` containing the provided
  * value if it is not nullish, otherwise returns `Nothing`.
  */
-export const Maybe = <T>(x: T | null | undefined): Maybe<T> =>
+export const Maybe = <T>(x: Nullable<T>): Maybe<T> =>
   x !== null && x !== undefined ? Just(x) : Nothing;
 
 abstract class _Maybe<T> {
@@ -121,7 +122,7 @@ abstract class _Maybe<T> {
    *
    * @equiv `this.match({ Just: x => Maybe(f(x)), Nothing: () => Nothing })`
    */
-  abstract map<U>(f: (x: T) => U | null | undefined): Maybe<U>;
+  abstract map<U>(f: (x: T) => Nullable<U>): Maybe<U>;
 
   /**
    * If `this` is `Just`, returns the function applied to the inner value,
@@ -218,7 +219,7 @@ abstract class _Maybe<T> {
     });
   }
 
-  zipWith<U, V>(that: Maybe<U>, f: (x: T, y: U) => V | null | undefined): Maybe<V> {
+  zipWith<U, V>(that: Maybe<U>, f: (x: T, y: U) => Nullable<V>): Maybe<V> {
     return this.match({
       Just: x =>
         that.match({
