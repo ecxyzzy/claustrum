@@ -54,6 +54,8 @@ abstract class _Maybe<T> {
    */
   abstract match<U>({ Just, Nothing }: { Just: (x: T) => U; Nothing: () => U }): U;
 
+  // region Derived abstract operations
+
   /**
    * Returns `Nothing` if `this` is `Nothing`, otherwise returns `that`.
    *
@@ -241,20 +243,9 @@ abstract class _Maybe<T> {
    */
   abstract xor(that: Maybe<T>): Maybe<T>;
 
-  flat<U>(this: Maybe<Maybe<U>>): Maybe<U> {
-    return this.flatMap(x => x);
-  }
+  // endregion
 
-  transpose<L, R>(this: Maybe<Either<L, R>>): Either<L, Maybe<R>> {
-    return this.match({
-      Just: x =>
-        x.match({
-          Right: y => Right(Maybe(y)),
-          Left: y => Left(y),
-        }),
-      Nothing: () => Right(Nothing),
-    });
-  }
+  // region Variadic operations
 
   /**
    * Converts a `Maybe` containing a tuple of variable arity into a tuple of
@@ -262,9 +253,13 @@ abstract class _Maybe<T> {
    *
    * This is the dual of {@link zip}.
    */
-  unzip<A, B>(this: Maybe<[A, B]>): [Maybe<A>, Maybe<B>];
-  unzip<A, B, C>(this: Maybe<[A, B, C]>): [Maybe<A>, Maybe<B>, Maybe<C>];
-  unzip<A, B, C, D>(this: Maybe<[A, B, C, D]>): [Maybe<A>, Maybe<B>, Maybe<C>, Maybe<D>];
+  unzip<A, B>(this: Maybe<[Nullable<A>, Nullable<B>]>): [Maybe<A>, Maybe<B>];
+  unzip<A, B, C>(
+    this: Maybe<[Nullable<A>, Nullable<B>, Nullable<C>]>,
+  ): [Maybe<A>, Maybe<B>, Maybe<C>];
+  unzip<A, B, C, D>(
+    this: Maybe<[Nullable<A>, Nullable<B>, Nullable<C>, Nullable<D>]>,
+  ): [Maybe<A>, Maybe<B>, Maybe<C>, Maybe<D>];
   unzip(this: Maybe<unknown[]>): Maybe<unknown>[] {
     return this.match({
       Just: xs => xs.map(Maybe),
@@ -314,6 +309,39 @@ abstract class _Maybe<T> {
     return ms.some(Maybe.isNothing) ? Nothing : Maybe(f(ms.map(Maybe.unwrap)));
   }
 
+  // endregion
+
+  // region Type-constrained operations
+
+  /**
+   * Flatten the provided nested `Maybe`.
+   *
+   * This is monadic `join`.
+   */
+  flat<U>(this: Maybe<Maybe<U>>): Maybe<U> {
+    return this.flatMap(x => x);
+  }
+
+  /**
+   * Returns a `Right` containing `Nothing` if `this` is `Nothing`; if the inner
+   * `Either` is a `Left`, return that `Left`; otherwise, return a `Right`
+   * containing a `Maybe` containing the innermost value.
+   */
+  transpose<L, R>(this: Maybe<Either<L, Nullable<R>>>): Either<L, Maybe<R>> {
+    return this.match({
+      Just: x =>
+        x.match({
+          Right: y => Right(Maybe(y)),
+          Left: y => Left(y),
+        }),
+      Nothing: () => Right(Nothing),
+    });
+  }
+
+  // endregion
+
+  // region Abstract conversion operations
+
   toDictAsKey<V>(v: V): Dict<T, V> {
     return this.match({
       Just: x => Dict([x, v]),
@@ -362,6 +390,8 @@ abstract class _Maybe<T> {
       Nothing: () => Failure(e),
     });
   }
+
+  // endregion
 }
 
 class _Just<T> extends _Maybe<T> {
