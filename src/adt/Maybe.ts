@@ -5,16 +5,16 @@ import { FSet } from "@/collections/FSet";
 import { Seq } from "@/collections/Seq";
 import type { Nullable } from "@/types/Nullable";
 
+type Maybe_typeof = {
+  <T>(this: void, x: Nullable<T>): Maybe<T>;
+  isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
+  unwrap<T>(this: void, m: Maybe<T>): T;
+};
+
 /**
  * Represents an optional value.
  */
 export type Maybe<T> = Just<T> | Nothing<T>;
-
-interface Maybe_typeof {
-  <T>(this: void, x: Nullable<T>): Maybe<T>;
-  isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
-  unwrap<T>(this: void, m: Maybe<T>): T;
-}
 /**
  * Constructs a new `Maybe` instance. Returns `Just` containing the provided
  * value if it is not nullish, otherwise returns `Nothing`.
@@ -55,7 +55,7 @@ abstract class _Maybe<T> {
    *
    * This is the universal quantifier (`\forall`).
    *
-   * @equiv `this.match({ Just: x => !!f(x), Nothing => true })`
+   * @equiv `this.match({ Just: x => !!f(x), Nothing: () => true })`
    */
   abstract every(f: (x: T) => unknown): boolean;
 
@@ -63,7 +63,7 @@ abstract class _Maybe<T> {
    * Returns the inner value if `this` is `Just`, otherwise throws the provided
    * error-like object.
    *
-   * @equiv `this.match({ Just: x => x, Nothing => throw ... })`
+   * @equiv `this.match({ Just: x => x, Nothing: () => { throw ... } })`
    */
   abstract expect(errLike: string | Error | (() => Error)): NonNullable<T>;
 
@@ -112,6 +112,8 @@ abstract class _Maybe<T> {
   /**
    * Runs the provided side-effectful function on the inner value if `this` is
    * `Just`, otherwise does nothing. Returns the same `Maybe` after `f` is done.
+   *
+   * @equiv `this.match({ Just: x => { f(x); return this; }, Nothing: () => this })`
    */
   abstract inspect(f: (x: T) => unknown): Maybe<T>;
 
@@ -133,7 +135,8 @@ abstract class _Maybe<T> {
    * If `this` is `Just`, returns a new `Maybe` wrapping the value of the
    * function applied to the inner value, otherwise returns `Nothing`.
    *
-   * This is functorial `fmap`.
+   * This is functorial `fmap`, with the caveat that nullish return values
+   * result in `Nothing`.
    *
    * @equiv `this.match({ Just: x => Maybe(f(x)), Nothing: () => Nothing })`
    */
@@ -165,63 +168,66 @@ abstract class _Maybe<T> {
   abstract narrow<U extends T>(f: (x: T) => x is U): Maybe<U>;
 
   /**
-   * Converts a tuple of `Maybe` instances to a `Maybe` of a tuple. If any
-   * element in the tuple is `Nothing`, returns `Nothing`; otherwise, returns a
-   * `Just` containing a tuple of all unwrapped elements.
+   * If `this` is `Just`, returns `this`, otherwise returns the other `Maybe`.
+   *
+   * @equiv `this.match({ Just: _ => this, Nothing: () => that })`
    */
-  static all<A>(this: void, ms: [Maybe<A>]): Maybe<[A]>;
-  static all<A, B>(this: void, ms: [Maybe<A>, Maybe<B>]): Maybe<[A, B]>;
-  static all<A, B, C>(this: void, ms: [Maybe<A>, Maybe<B>, Maybe<C>]): Maybe<[A, B, C]>;
-  static all(this: void, ms: Maybe<unknown>[]): Maybe<unknown[]> {
-    return ms.some(Maybe.isNothing) ? Nothing : Just(ms.map(Maybe.unwrap));
-  }
+  abstract or(that: Maybe<T>): Maybe<T>;
 
-  or(this: Maybe<T>, that: Maybe<T>): Maybe<T> {
-    return this.match({
-      Just: () => this,
-      Nothing: () => that,
-    });
-  }
+  /**
+   * If `this` is `Just`, returns `this`, otherwise returns the result of the
+   * alternative function.
+   *
+   * @equiv `this.match({ Just: _ => this, Nothing: () => f() })`
+   */
+  abstract orElse(f: () => Maybe<T>): Maybe<T>;
 
-  orElse(this: Maybe<T>, f: () => Maybe<T>): Maybe<T> {
-    return this.match({
-      Just: () => this,
-      Nothing: f,
-    });
-  }
+  /**
+   * Returns the inner value if `this` is `Just`, otherwise returns `null`.
+   *
+   * This is an explicit escape hatch back into TypeScript nullability. It is
+   * mostly interchangeable with {@link orUndefined}, but can be useful if you
+   * need the value `null`.
+   *
+   * @equiv `this.match({ Just: x => x, Nothing: () => null })`
+   */
+  abstract orNull(): T | null;
 
-  orUndefined(): T | undefined {
-    return this.match({
-      Just: x => x,
-      Nothing: () => undefined,
-    });
-  }
+  /**
+   * Returns the inner value if `this` is `Just`, otherwise returns `undefined`.
+   *
+   * This is an explicit escape hatch back into TypeScript nullability. It is
+   * mostly interchangeable with {@link orNull}, but can be useful if you need
+   * the value `undefined`.
+   *
+   * @equiv `this.match({ Just: x => x, Nothing: () => undefined })`
+   */
+  abstract orUndefined(): T | undefined;
 
-  some(f: (x: T) => unknown): boolean {
-    return this.match({
-      Just: x => !!f(x),
-      Nothing: () => false,
-    });
-  }
+  /**
+   * Returns `true` if `this` is `Nothing` and the inner value matches the
+   * provided predicate.
+   *
+   * This is the existential quantifier (`\exists`).
+   *
+   * @equiv `this.match({ Just: x => !!f(x), Nothing: () => false })`
+   */
+  abstract some(f: (x: T) => unknown): boolean;
 
-  unwrap(): T {
-    return this.expect("unwrap called on instance of Nothing");
-  }
+  /**
+   * Returns the inner value is `this` is `Just`, otherwise throws.
+   *
+   * This is {@link expect} with a preset error message.
+   */
+  abstract unwrap(): T;
 
-  xor(this: Maybe<T>, that: Maybe<T>): Maybe<T> {
-    return this.match({
-      Just: () =>
-        that.match({
-          Just: () => Nothing,
-          Nothing: () => this,
-        }),
-      Nothing: () =>
-        that.match({
-          Just: () => that,
-          Nothing: () => Nothing,
-        }),
-    });
-  }
+  /**
+   * If `this` is `Just` and `that` is `Nothing`, returns `this`; if `this` is
+   * `Nothing` and `that` is `Just`, returns `that`; otherwise returns `Nothing`.
+   *
+   * @equiv `this.match({ Just: _ => that.match({ Just: _ => Nothing, Nothing: () => this }), Nothing: () => that.match({ Just: _ => that, Nothing: () => Nothing }) })`
+   */
+  abstract xor(that: Maybe<T>): Maybe<T>;
 
   zip<U>(that: Maybe<U>): Maybe<[T, U]> {
     return this.match({
@@ -395,6 +401,34 @@ class _Just<T> extends _Maybe<T> {
   narrow<U extends T>(f: (x: T) => x is U): Maybe<U> {
     return f(this.v) ? Maybe(this.v) : Nothing;
   }
+
+  or(): Maybe<T> {
+    return this;
+  }
+
+  orElse(): Maybe<T> {
+    return this;
+  }
+
+  orNull(): T | null {
+    return this.v;
+  }
+
+  orUndefined(): T | undefined {
+    return this.v;
+  }
+
+  some(f: (x: T) => unknown): boolean {
+    return !!f(this.v);
+  }
+
+  unwrap(): T {
+    return this.v;
+  }
+
+  xor(that: Maybe<T>): Maybe<T> {
+    return that.isNothing() ? this : Nothing;
+  }
 }
 
 class _Nothing<T> extends _Maybe<T> {
@@ -467,6 +501,34 @@ class _Nothing<T> extends _Maybe<T> {
 
   narrow<U extends T>(): Maybe<U> {
     return Nothing;
+  }
+
+  or(that: Maybe<T>): Maybe<T> {
+    return that;
+  }
+
+  orElse(f: () => Maybe<T>): Maybe<T> {
+    return f();
+  }
+
+  orNull(): T | null {
+    return null;
+  }
+
+  orUndefined(): T | undefined {
+    return undefined;
+  }
+
+  some(): boolean {
+    return false;
+  }
+
+  unwrap(): T {
+    throw new TypeError("unwrap called on instance of Nothing");
+  }
+
+  xor(that: Maybe<T>): Maybe<T> {
+    return that;
   }
 }
 
