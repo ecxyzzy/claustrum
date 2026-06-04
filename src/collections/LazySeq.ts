@@ -40,23 +40,21 @@ class _LazySeq<T> implements Iterable<T> {
   static generate(this: void, start: SafeInt): LazySeq<RichInt>;
   static generate(this: void, start: SafeInt, step: SafeInt): LazySeq<RichInt>;
   static generate(this: void, start: SafeInt, step?: SafeInt): LazySeq<RichInt> {
+    const startVal = RichInt(start).valueOf();
+    const stepVal = step !== undefined ? RichInt(step).valueOf() : 1;
     return new _LazySeq(function* () {
-      for (
-        let i = RichInt(start).valueOf();
-        ;
-        i += step !== undefined ? RichInt(step).valueOf() : 1
-      ) {
+      for (let i = startVal; ; i += stepVal) {
         yield RichInt(i);
       }
     });
   }
 
   drop(n: SafeInt): LazySeq<T> {
-    const rn = RichInt(n);
-    if (rn.valueOf() < 1) return this;
+    const nVal = RichInt(n).valueOf();
+    if (nVal < 1) return this;
     const g = this.g();
     return new _LazySeq(function* () {
-      for (let i = 0; i < rn.valueOf(); ++i) {
+      for (let i = 0; i < nVal; ++i) {
         g.next();
       }
       for (const x of g) {
@@ -66,11 +64,11 @@ class _LazySeq<T> implements Iterable<T> {
   }
 
   take(n: SafeInt): LazySeq<T> {
-    const rn = RichInt(n);
-    if (rn.valueOf() < 1) return LazySeq.empty();
+    const nVal = RichInt(n).valueOf();
+    if (nVal < 1) return LazySeq.empty();
     const g = this.g();
     return new _LazySeq(function* () {
-      for (let i = 0; i < rn.valueOf(); ++i) {
+      for (let i = 0; i < nVal; ++i) {
         const next = g.next();
         if (next.done) return;
         yield next.value;
