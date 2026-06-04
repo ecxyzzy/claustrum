@@ -23,6 +23,6 @@ class _Task<T> extends Runnable<T> {
   }
 
   liftMaybe<U>(this: Task<Maybe<U>>): TaskMaybe<U> {
-    return TaskMaybe(this.task);
+    return TaskMaybe(async () => await this.task());
   }
 }

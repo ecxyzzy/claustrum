@@ -17,6 +17,8 @@ export default defineConfig({
       "adt/*": ["./src/adt/*.ts", "!./src/adt/index.ts"],
       collections: "./src/collections/index.ts",
       "collections/*": ["./src/collections/*.ts", "!./src/collections/index.ts"],
+      concurrent: "./src/concurrent/index.ts",
+      "concurrent/*": ["./src/concurrent/*.ts", "!./src/concurrent/index.ts"],
       numeric: "./src/numeric/index.ts",
       "numeric/*": ["./src/numeric/*.ts", "!./src/numeric/index.ts"],
     },
