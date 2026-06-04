@@ -9,12 +9,27 @@ import type { Nullable } from "@/types/Nullable";
  * Represents an optional value.
  */
 export type Maybe<T> = Just<T> | Nothing<T>;
+
+interface Maybe_typeof {
+  <T>(this: void, x: Nullable<T>): Maybe<T>;
+  isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
+  unwrap<T>(this: void, m: Maybe<T>): T;
+}
 /**
  * Constructs a new `Maybe` instance. Returns `Just` containing the provided
  * value if it is not nullish, otherwise returns `Nothing`.
  */
-export const Maybe = <T>(x: Nullable<T>): Maybe<T> =>
-  x !== null && x !== undefined ? Just(x) : Nothing;
+export const Maybe: Maybe_typeof = Object.assign(
+  <T>(x: Nullable<T>): Maybe<T> => (x !== null && x !== undefined ? Just(x) : Nothing),
+  {
+    isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T> {
+      return m.isNothing();
+    },
+    unwrap<T>(this: void, m: Maybe<T>): T {
+      return m.unwrap();
+    },
+  },
+);
 
 abstract class _Maybe<T> {
   abstract readonly type: "Just" | "Nothing";
@@ -308,10 +323,6 @@ abstract class _Maybe<T> {
     });
   }
 }
-
-Maybe.all = _Maybe.all;
-Maybe.isNothing = <T>(m: Maybe<T>) => m.isNothing();
-Maybe.unwrap = <T>(m: Maybe<T>) => m.unwrap();
 
 class _Just<T> extends _Maybe<T> {
   readonly type = "Just";
