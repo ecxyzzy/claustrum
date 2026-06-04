@@ -1,8 +1,6 @@
 import { type Either, Left, Right } from "@/adt/Either";
-import { Failure, Success, type Try } from "@/adt/Try";
-import { Dict } from "@/collections/Dict";
-import { FSet } from "@/collections/FSet";
 import { Seq } from "@/collections/Seq";
+import { TaskMaybe } from "@/concurrent/TaskMaybe";
 import type { Nullable } from "@/types/Nullable";
 
 type Maybe_typeof = {
@@ -323,6 +321,14 @@ abstract class _Maybe<T> {
   }
 
   /**
+   * Lifts this `Maybe` into a `TaskMaybe`, to allow deferred computations to be
+   * performed on this `Maybe`.
+   */
+  liftTask(this: Maybe<T>): TaskMaybe<T> {
+    return TaskMaybe(() => this);
+  }
+
+  /**
    * Returns a `Right` containing `Nothing` if `this` is `Nothing`; if the inner
    * `Either` is a `Left`, return that `Left`; otherwise, return a `Right`
    * containing a `Maybe` containing the innermost value.
@@ -340,56 +346,31 @@ abstract class _Maybe<T> {
 
   // endregion
 
-  // region Abstract conversion operations
+  // region Derived abstract conversion operations
 
-  toDictAsKey<V>(v: V): Dict<T, V> {
-    return this.match({
-      Just: x => Dict([x, v]),
-      Nothing: () => Dict(),
-    });
-  }
+  /**
+   * If `this` is `Just`, returns a `Left` containing the inner value, otherwise
+   * returns a `Right` containing the provided value.
+   *
+   * @equiv `this.match({ Just: x => Left(x), Nothing: () => Right(r) })`
+   */
+  abstract toLeft<R>(r: R): Either<T, R>;
 
-  toDictAsValue<K>(k: K): Dict<K, T> {
-    return this.match({
-      Just: x => Dict([k, x]),
-      Nothing: () => Dict(),
-    });
-  }
+  /**
+   * If `this` is `Just`, returns a `Right` containing the inner value,
+   * otherwise returns a `Left` containing the provided value.
+   *
+   * @equiv `this.match({ Just: x => Right(x), Nothing: () => Left(l) })`
+   */
+  abstract toRight<L>(l: L): Either<L, T>;
 
-  toFSet(): FSet<T> {
-    return this.match({
-      Just: x => FSet(x),
-      Nothing: FSet,
-    });
-  }
-
-  toLeft<R>(r: R): Either<T, R> {
-    return this.match({
-      Just: x => Left(x),
-      Nothing: () => Right(r),
-    });
-  }
-
-  toRight<L>(l: L): Either<L, T> {
-    return this.match({
-      Just: x => Right(x),
-      Nothing: () => Left(l),
-    });
-  }
-
-  toSeq(): Seq<T> {
-    return this.match({
-      Just: x => Seq(x),
-      Nothing: Seq,
-    });
-  }
-
-  toTry<E = unknown>(e: E): Try<T> {
-    return this.match({
-      Just: Success,
-      Nothing: () => Failure(e),
-    });
-  }
+  /**
+   * If `this` is `Just`, returns a `Seq` of length 1 containing the inner
+   * value, otherwise returns an empty `Seq`.
+   *
+   * @equiv `this.match({ Just: x => Seq(x), Nothing: () => Seq() })`
+   */
+  abstract toSeq(): Seq<T>;
 
   // endregion
 }
@@ -493,6 +474,18 @@ class _Just<T> extends _Maybe<T> {
   xor(that: Maybe<T>): Maybe<T> {
     return that.isNothing() ? this : Nothing;
   }
+
+  toLeft<R>(_r: R): Either<T, R> {
+    return Left(this.v);
+  }
+
+  toRight<L>(_l: L): Either<L, T> {
+    return Right(this.v);
+  }
+
+  toSeq(): Seq<T> {
+    return Seq(this.v);
+  }
 }
 
 class _Nothing<T> extends _Maybe<T> {
@@ -593,6 +586,18 @@ class _Nothing<T> extends _Maybe<T> {
 
   xor(that: Maybe<T>): Maybe<T> {
     return that;
+  }
+
+  toLeft<R>(r: R): Either<T, R> {
+    return Right(r);
+  }
+
+  toRight<L>(l: L): Either<L, T> {
+    return Left(l);
+  }
+
+  toSeq(): Seq<T> {
+    return Seq();
   }
 }
 
