@@ -12,6 +12,18 @@ type Maybe_typeof = {
 };
 
 /**
+ * This is a really stupid hack, but in order to properly support the `Nothing`
+ * case of variadic `Maybe.unzip`, we need to make sure the "tuple" is populated
+ * with as many `Nothing`s as the maximum arity we support. This is to ensure
+ * that when a consumer destructures the result, none of the elements are
+ * `undefined`.
+ *
+ * If you update `Maybe.unzip` to support higher-arity tuples, update this
+ * constant to reflect the new maximum arity.
+ */
+const UNZIP_MAX_ARITY = 4;
+
+/**
  * Represents an optional value.
  */
 export type Maybe<T> = Just<T> | Nothing<T>;
@@ -229,28 +241,6 @@ abstract class _Maybe<T> {
    */
   abstract xor(that: Maybe<T>): Maybe<T>;
 
-  zip<U>(that: Maybe<U>): Maybe<[T, U]> {
-    return this.match({
-      Just: x =>
-        that.match({
-          Just: y => Just([x, y]),
-          Nothing: () => Nothing,
-        }),
-      Nothing: () => Nothing,
-    });
-  }
-
-  zipWith<U, V>(that: Maybe<U>, f: (x: T, y: U) => Nullable<V>): Maybe<V> {
-    return this.match({
-      Just: x =>
-        that.match({
-          Just: y => Maybe(f(x, y)),
-          Nothing: () => Nothing,
-        }),
-      Nothing: () => Nothing,
-    });
-  }
-
   flat<U>(this: Maybe<Maybe<U>>): Maybe<U> {
     return this.flatMap(x => x);
   }
@@ -266,18 +256,62 @@ abstract class _Maybe<T> {
     });
   }
 
-  unzip<A, B>(this: Maybe<[A, B]>): [Maybe<A>, Maybe<B>] {
+  /**
+   * Converts a `Maybe` containing a tuple of variable arity into a tuple of
+   * `Maybes`.
+   *
+   * This is the dual of {@link zip}.
+   */
+  unzip<A, B>(this: Maybe<[A, B]>): [Maybe<A>, Maybe<B>];
+  unzip<A, B, C>(this: Maybe<[A, B, C]>): [Maybe<A>, Maybe<B>, Maybe<C>];
+  unzip<A, B, C, D>(this: Maybe<[A, B, C, D]>): [Maybe<A>, Maybe<B>, Maybe<C>, Maybe<D>];
+  unzip(this: Maybe<unknown[]>): Maybe<unknown>[] {
     return this.match({
-      Just: ([a, b]) => [Maybe(a), Maybe(b)],
-      Nothing: () => [Nothing, Nothing],
+      Just: xs => xs.map(Maybe),
+      Nothing: () => [...Array(UNZIP_MAX_ARITY)].map(_ => Nothing),
     });
   }
 
-  unzip3<A, B, C>(this: Maybe<[A, B, C]>): [Maybe<A>, Maybe<B>, Maybe<C>] {
-    return this.match({
-      Just: ([a, b, c]) => [Maybe(a), Maybe(b), Maybe(c)],
-      Nothing: () => [Nothing, Nothing, Nothing],
-    });
+  /**
+   * Converts an arbitrary number of `Maybe` instances to a `Maybe` of a tuple.
+   * If any element in the tuple is `Nothing`, returns `Nothing`; otherwise,
+   * returns a `Just` containing a tuple of all unwrapped elements.
+   *
+   * This is the dual of {@link unzip}.
+   */
+  zip<T1>(that: Maybe<T1>): Maybe<[T, T1]>;
+  zip<T1, T2>(that: Maybe<T1>, that2: Maybe<T2>): Maybe<[T, T1, T2]>;
+  zip<T1, T2, T3>(that: Maybe<T1>, that2: Maybe<T2>, that3: Maybe<T3>): Maybe<[T, T1, T2, T3]>;
+  zip(this: Maybe<T>, ...thats: Maybe<unknown>[]): Maybe<unknown[]> {
+    const ms = [this, ...thats];
+    return ms.some(Maybe.isNothing) ? Nothing : Just(ms.map(Maybe.unwrap));
+  }
+
+  /**
+   * Converts an arbitrary number of `Maybe` instances into a single `Maybe`. If
+   * any element in the tuple is `Nothing`, returns `Nothing`; otherwise,
+   * returns a `Just` containing the provided function called with all unwrapped
+   * elements provided in order.
+   */
+  zipWith<T1, TOut>(f: (x: T1) => Nullable<TOut>, that: Maybe<T1>): Maybe<TOut>;
+  zipWith<T1, T2, TOut>(
+    f: (x: T1, y: T2) => Nullable<TOut>,
+    that: Maybe<T1>,
+    that2: Maybe<T2>,
+  ): Maybe<TOut>;
+  zipWith<T1, T2, T3, TOut>(
+    f: (x: T1, y: T2, z: T3) => Nullable<TOut>,
+    that: Maybe<T1>,
+    that2: Maybe<T2>,
+    that3: Maybe<T3>,
+  ): Maybe<TOut>;
+  zipWith<TOut>(
+    this: Maybe<T>,
+    f: (...xs: unknown[]) => Nullable<TOut>,
+    ...thats: Maybe<unknown>[]
+  ): Maybe<TOut> {
+    const ms = [this, ...thats];
+    return ms.some(Maybe.isNothing) ? Nothing : Maybe(f(ms.map(Maybe.unwrap)));
   }
 
   toDictAsKey<V>(v: V): Dict<T, V> {
