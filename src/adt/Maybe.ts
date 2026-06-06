@@ -580,6 +580,7 @@ type Maybe_constructor = {
 };
 
 type Maybe_static = {
+  isJust<T>(this: void, m: Maybe<T>): m is Just<T>;
   isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
   unwrap<T>(this: void, m: Maybe<T>): T;
 };
@@ -594,6 +595,7 @@ export type Maybe<T> = Just<T> | Nothing<T>;
 export const Maybe: Maybe_typeof = Object.assign<Maybe_constructor, Maybe_static>(
   x => (x !== null && x !== undefined ? Just(x) : Nothing),
   {
+    isJust: m => m.isJust(),
     isNothing: m => m.isNothing(),
     unwrap: m => m.unwrap(),
   },
