@@ -12,6 +12,10 @@ class _Task<T> extends Runnable<T> {
     super(task);
   }
 
+  flat<U>(this: Task<Task<U>>): Task<U> {
+    return this.flatMap(x => x);
+  }
+
   flatMap<U>(f: (x: T) => Task<U>): Task<U> {
     return Task(async () => f(await this.task()).run());
   }
