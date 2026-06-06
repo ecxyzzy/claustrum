@@ -9,6 +9,13 @@ class _TaskMaybe<T> extends Runnable<Maybe<T>> {
     super(task);
   }
 
+  filter(f: (x: T) => Awaitable<unknown>): TaskMaybe<T> {
+    return TaskMaybe(async () => {
+      const res = await this.task();
+      return res.isJust() && (await f(res.unwrap())) ? res : Nothing;
+    });
+  }
+
   flatMap<U>(f: (x: T) => TaskMaybe<U>): TaskMaybe<U> {
     return TaskMaybe(async () => {
       const res = await this.task();
