@@ -1,26 +1,75 @@
 abstract class _Either<L, R> {
   abstract readonly type: "Left" | "Right";
 
-  abstract match<U>({ Left, Right }: { Left: (x: L) => U; Right: (x: R) => U }): U;
+  abstract match<T>({ Left, Right }: { Left: (x: L) => T; Right: (x: R) => T }): T;
+  abstract flatMap<S>(f: (x: R) => Either<L, S>): Either<L, S>;
+  abstract isLeft(): this is Left<L, R>;
+  abstract isRight(): this is Right<L, R>;
+  abstract swap(): Either<R, L>;
+  abstract unwrap(): R;
 }
 
-class _Left<L, R> implements _Either<L, R> {
+class _Left<L, R> extends _Either<L, R> {
   readonly type = "Left";
 
-  constructor(private readonly v: L) {}
+  constructor(private readonly v: L) {
+    super();
+  }
 
-  match<U>({ Left }: { Left: (x: L) => U }): U {
+  match<T>({ Left }: { Left: (x: L) => T }): T {
     return Left(this.v);
+  }
+
+  flatMap<S>(_f: (x: R) => Either<L, S>): Either<L, S> {
+    return Left(this.v);
+  }
+
+  isLeft(): this is Left<L, R> {
+    return true;
+  }
+
+  isRight(): this is Right<L, R> {
+    return false;
+  }
+
+  swap(): Either<R, L> {
+    return Right(this.v);
+  }
+
+  unwrap(): R {
+    throw new TypeError("unwrap called on instance of Left");
   }
 }
 
-class _Right<L, R> implements _Either<L, R> {
+class _Right<L, R> extends _Either<L, R> {
   readonly type = "Right";
 
-  constructor(private readonly v: R) {}
+  constructor(private readonly v: R) {
+    super();
+  }
 
-  match<U>({ Right }: { Right: (x: R) => U }): U {
+  match<T>({ Right }: { Right: (x: R) => T }): T {
     return Right(this.v);
+  }
+
+  flatMap<S>(f: (x: R) => Either<L, S>): Either<L, S> {
+    return f(this.v);
+  }
+
+  isLeft(): this is Left<L, R> {
+    return false;
+  }
+
+  isRight(): this is Right<L, R> {
+    return true;
+  }
+
+  swap(): Either<R, L> {
+    return Left(this.v);
+  }
+
+  unwrap(): R {
+    return this.v;
   }
 }
 
