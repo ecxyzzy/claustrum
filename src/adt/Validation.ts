@@ -1,11 +1,5 @@
 import { Seq } from "@/collections/Seq";
 
-/**
- * Represents a valid value, or a sequence of errors explaining why the value
- * was invalid. Does not short-circuit on error, unlike `Either`.
- */
-export type Validation<T> = Valid<T> | Invalid;
-
 abstract class _Validation<T> {
   abstract readonly type: "Valid" | "Invalid";
 
@@ -30,7 +24,7 @@ class _Valid<T> extends _Validation<T> {
   }
 }
 
-class _Invalid extends _Validation<never> {
+class _Invalid<T> extends _Validation<T> {
   readonly type = "Invalid";
 
   constructor(private readonly es: Seq<unknown>) {
@@ -42,8 +36,14 @@ class _Invalid extends _Validation<never> {
   }
 }
 
+/**
+ * Represents a valid value, or a sequence of errors explaining why the value
+ * was invalid. Does not short-circuit on error, unlike `Either`.
+ */
+export type Validation<T> = Valid<T> | Invalid<T>;
+
 export type Valid<T> = _Valid<T>;
-export type Invalid = _Invalid;
+export type Invalid<T> = _Invalid<T>;
 
 export const Valid = <T>(x: T): Validation<T> => new _Valid(x);
-export const Invalid = (...errors: unknown[]): Validation<never> => new _Invalid(Seq(...errors));
+export const Invalid = <T>(...errors: unknown[]): Validation<T> => new _Invalid(Seq(...errors));

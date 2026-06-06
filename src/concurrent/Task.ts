@@ -1,13 +1,7 @@
 import type { Maybe } from "@/adt";
+import type { Awaitable } from "@/concurrent/Awaitable";
 import { Runnable } from "@/concurrent/Runnable";
 import { TaskMaybe } from "@/concurrent/TaskMaybe";
-import type { Awaitable } from "@/types/Awaitable";
-
-/**
- * Represents a deferred computation that may be async.
- */
-export type Task<T> = _Task<T>;
-export const Task = <T>(f: () => Awaitable<T>): Task<T> => new _Task(f);
 
 class _Task<T> extends Runnable<T> {
   constructor(task: () => Awaitable<T>) {
@@ -26,3 +20,9 @@ class _Task<T> extends Runnable<T> {
     return TaskMaybe(async () => await this.task());
   }
 }
+
+/**
+ * Represents a deferred computation that may be async.
+ */
+export type Task<T> = _Task<T>;
+export const Task = <T>(f: () => Awaitable<T>): Task<T> => new _Task(f);

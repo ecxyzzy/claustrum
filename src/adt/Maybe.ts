@@ -3,12 +3,6 @@ import type { Nullable } from "@/adt/Nullable";
 import { Seq } from "@/collections/Seq";
 import { TaskMaybe } from "@/concurrent/TaskMaybe";
 
-type Maybe_typeof = {
-  <T>(this: void, x: Nullable<T>): Maybe<T>;
-  isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
-  unwrap<T>(this: void, m: Maybe<T>): T;
-};
-
 /**
  * This is a really stupid hack, but in order to properly support the `Nothing`
  * case of variadic `Maybe.unzip`, we need to make sure the "tuple" is populated
@@ -20,26 +14,6 @@ type Maybe_typeof = {
  * constant to reflect the new maximum arity.
  */
 const UNZIP_MAX_ARITY = 4;
-
-/**
- * Represents an optional value.
- */
-export type Maybe<T> = Just<T> | Nothing<T>;
-/**
- * Constructs a new `Maybe` instance. Returns `Just` containing the provided
- * value if it is not nullish, otherwise returns `Nothing`.
- */
-export const Maybe: Maybe_typeof = Object.assign(
-  <T>(x: Nullable<T>): Maybe<T> => (x !== null && x !== undefined ? Just(x) : Nothing),
-  {
-    isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T> {
-      return m.isNothing();
-    },
-    unwrap<T>(this: void, m: Maybe<T>): T {
-      return m.unwrap();
-    },
-  },
-);
 
 abstract class _Maybe<T> {
   abstract readonly type: "Just" | "Nothing";
@@ -600,6 +574,30 @@ class _Nothing<T> extends _Maybe<T> {
     return Seq();
   }
 }
+
+type Maybe_constructor = {
+  <T>(this: void, x: Nullable<T>): Maybe<T>;
+};
+
+type Maybe_static = {
+  isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
+  unwrap<T>(this: void, m: Maybe<T>): T;
+};
+
+type Maybe_typeof = Maybe_constructor & Maybe_static;
+
+/**
+ * Represents an optional value. The constructor returns `Just` containing the
+ * provided value if it is not nullish, otherwise returns `Nothing`.
+ */
+export type Maybe<T> = Just<T> | Nothing<T>;
+export const Maybe: Maybe_typeof = Object.assign<Maybe_constructor, Maybe_static>(
+  x => (x !== null && x !== undefined ? Just(x) : Nothing),
+  {
+    isNothing: m => m.isNothing(),
+    unwrap: m => m.unwrap(),
+  },
+);
 
 export type Just<T> = _Just<T>;
 export type Nothing<T> = _Nothing<T>;

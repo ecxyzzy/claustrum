@@ -1,6 +1,3 @@
-export type Dict<K, V> = _Dict<K, V>;
-export const Dict = <K, V>(...pairs: [K, V][]): Dict<K, V> => new _Dict(pairs);
-
 class _Dict<K, V> implements Iterable<[K, V]> {
   private readonly d: ReadonlyMap<K, V>;
 
@@ -16,3 +13,6 @@ class _Dict<K, V> implements Iterable<[K, V]> {
     return this.d[Symbol.iterator]();
   }
 }
+
+export type Dict<K, V> = _Dict<K, V>;
+export const Dict = <K, V>(...pairs: [K, V][]): Dict<K, V> => new _Dict(pairs);

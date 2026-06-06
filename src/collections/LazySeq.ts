@@ -2,40 +2,20 @@ import { Seq } from "@/collections/Seq";
 import { RichInt } from "@/numeric/RichInt";
 import type { SafeInt } from "@/numeric/SafeInt";
 
-export type LazySeq<T> = _LazySeq<T>;
-export const LazySeq = <T>(left: T | LazySeq<T>, right: LazySeq<T>): LazySeq<T> => {
-  if (left instanceof _LazySeq) {
-    return new _LazySeq(function* () {
-      for (const x of left) {
-        yield x;
-      }
-      for (const y of right) {
-        yield y;
-      }
-    });
-  }
-  return new _LazySeq(function* () {
-    yield left;
-    for (const x of right) {
-      yield x;
-    }
-  });
+type LazySeq_constructor = {
+  <T>(left: T | LazySeq<T>, right: LazySeq<T>): LazySeq<T>;
 };
+
+type LazySeq_static = {
+  empty<T>(this: void): LazySeq<T>;
+  from<T>(this: void, it: Iterable<T>): LazySeq<T>;
+  generate: typeof _LazySeq.generate;
+};
+
+type LazySeq_typeof = LazySeq_constructor & LazySeq_static;
 
 class _LazySeq<T> implements Iterable<T> {
   constructor(private readonly g: () => Generator<T, void, unknown>) {}
-
-  static empty<T>(this: void): LazySeq<T> {
-    return new _LazySeq(function* () {});
-  }
-
-  static from<T>(this: void, it: Iterable<T>): LazySeq<T> {
-    return new _LazySeq(function* () {
-      for (const x of it) {
-        yield x;
-      }
-    });
-  }
 
   static generate(this: void, start: SafeInt): LazySeq<RichInt>;
   static generate(this: void, start: SafeInt, step: SafeInt): LazySeq<RichInt>;
@@ -85,6 +65,34 @@ class _LazySeq<T> implements Iterable<T> {
   }
 }
 
-LazySeq.empty = _LazySeq.empty;
-LazySeq.from = _LazySeq.from;
-LazySeq.generate = _LazySeq.generate;
+export type LazySeq<T> = _LazySeq<T>;
+export const LazySeq: LazySeq_typeof = Object.assign<LazySeq_constructor, LazySeq_static>(
+  (left, right) => {
+    if (left instanceof _LazySeq) {
+      return new _LazySeq(function* () {
+        for (const x of left) {
+          yield x;
+        }
+        for (const y of right) {
+          yield y;
+        }
+      });
+    }
+    return new _LazySeq(function* () {
+      yield left;
+      for (const x of right) {
+        yield x;
+      }
+    });
+  },
+  {
+    empty: () => new _LazySeq(function* () {}),
+    from: it =>
+      new _LazySeq(function* () {
+        for (const x of it) {
+          yield x;
+        }
+      }),
+    generate: _LazySeq.generate,
+  },
+);

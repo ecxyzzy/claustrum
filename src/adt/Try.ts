@@ -1,15 +1,3 @@
-/**
- * Represents a computation that may throw.
- */
-export type Try<T> = Success<T> | Failure;
-export const Try = <T>(f: () => T): Try<T> => {
-  try {
-    return Success(f());
-  } catch (e) {
-    return Failure(e);
-  }
-};
-
 abstract class _Try<T> {
   abstract readonly type: "Success" | "Failure";
   abstract match<U>({ Success, Failure }: { Success: (x: T) => U; Failure: (x: unknown) => U }): U;
@@ -38,6 +26,18 @@ class _Failure extends _Try<never> {
     return Failure(this.e);
   }
 }
+
+/**
+ * Represents a computation that may throw.
+ */
+export type Try<T> = Success<T> | Failure;
+export const Try = <T>(f: () => T): Try<T> => {
+  try {
+    return Success(f());
+  } catch (e) {
+    return Failure(e);
+  }
+};
 
 export type Success<T> = _Success<T>;
 export type Failure = _Failure;

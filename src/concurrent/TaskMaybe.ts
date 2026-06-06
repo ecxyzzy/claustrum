@@ -4,15 +4,6 @@ import type { Awaitable } from "@/concurrent/Awaitable";
 import { Runnable } from "@/concurrent/Runnable";
 import { Task } from "@/concurrent/Task";
 
-/**
- * Represents a deferred Maybe-bearing computation that may be async. Functorial
- * and monadic operations on this type "reach into" the inner `Maybe` directly.
- *
- * This is the monad transformer `MaybeT<Task, T>`.
- */
-export type TaskMaybe<T> = _TaskMaybe<T>;
-export const TaskMaybe = <T>(f: () => Awaitable<Maybe<T>>): TaskMaybe<T> => new _TaskMaybe(f);
-
 class _TaskMaybe<T> extends Runnable<Maybe<T>> {
   constructor(task: () => Awaitable<Maybe<T>>) {
     super(task);
@@ -36,3 +27,12 @@ class _TaskMaybe<T> extends Runnable<Maybe<T>> {
     return Task(this.task);
   }
 }
+
+/**
+ * Represents a deferred Maybe-bearing computation that may be async. Functorial
+ * and monadic operations on this type "reach into" the inner `Maybe` directly.
+ *
+ * This is the monad transformer `MaybeT<Task, T>`.
+ */
+export type TaskMaybe<T> = _TaskMaybe<T>;
+export const TaskMaybe = <T>(f: () => Awaitable<Maybe<T>>): TaskMaybe<T> => new _TaskMaybe(f);

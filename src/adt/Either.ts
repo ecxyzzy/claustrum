@@ -1,8 +1,3 @@
-/**
- * Represents a right-biased disjoint union.
- */
-export type Either<L, R> = Left<L, R> | Right<L, R>;
-
 abstract class _Either<L, R> {
   abstract readonly type: "Left" | "Right";
 
@@ -28,6 +23,11 @@ class _Right<L, R> implements _Either<L, R> {
     return Right(this.v);
   }
 }
+
+/**
+ * Represents a right-biased disjoint union.
+ */
+export type Either<L, R> = Left<L, R> | Right<L, R>;
 
 export type Left<L, R> = _Left<L, R>;
 export type Right<L, R> = _Right<L, R>;
