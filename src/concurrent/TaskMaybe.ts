@@ -24,7 +24,7 @@ class _TaskMaybe<T> extends Runnable<Maybe<T>> {
   }
 
   unlift(): Task<Maybe<T>> {
-    return Task(this.task);
+    return Task(async () => await this.task());
   }
 }
 
