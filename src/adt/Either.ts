@@ -1,3 +1,5 @@
+import { TaskEither } from "@/concurrent/TaskEither";
+
 abstract class _Either<L, R> {
   abstract readonly type: "Left" | "Right";
 
@@ -7,6 +9,10 @@ abstract class _Either<L, R> {
   abstract isRight(): this is Right<L, R>;
   abstract swap(): Either<R, L>;
   abstract unwrap(): R;
+
+  liftTask(this: Either<L, R>): TaskEither<L, R> {
+    return TaskEither(() => this);
+  }
 }
 
 class _Left<L, R> extends _Either<L, R> {

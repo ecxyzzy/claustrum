@@ -1,7 +1,9 @@
+import type { Either } from "@/adt/Either";
 import type { Maybe } from "@/adt/Maybe";
 import type { Try } from "@/adt/Try";
 import type { Awaitable } from "@/concurrent/Awaitable";
 import { Runnable } from "@/concurrent/Runnable";
+import { TaskEither } from "@/concurrent/TaskEither";
 import { TaskMaybe } from "@/concurrent/TaskMaybe";
 import { TaskTry } from "@/concurrent/TaskTry";
 
@@ -16,6 +18,10 @@ class _Task<T> extends Runnable<T> {
 
   map<U>(f: (x: T) => Awaitable<U>): Task<U> {
     return Task(async () => f(await this.task()));
+  }
+
+  liftEither<L, R>(this: Task<Either<L, R>>): TaskEither<L, R> {
+    return TaskEither(async () => await this.task());
   }
 
   liftMaybe<U>(this: Task<Maybe<U>>): TaskMaybe<U> {
