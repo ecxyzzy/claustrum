@@ -1,7 +1,7 @@
 import { type Either, Left, Right } from "@/adt/Either";
+import type { Nullable } from "@/adt/Nullable";
 import { Seq } from "@/collections/Seq";
 import { TaskMaybe } from "@/concurrent/TaskMaybe";
-import type { Nullable } from "@/types/Nullable";
 
 type Maybe_typeof = {
   <T>(this: void, x: Nullable<T>): Maybe<T>;

@@ -1,8 +1,8 @@
 import { Maybe, Nothing } from "@/adt/Maybe";
+import type { Nullable } from "@/adt/Nullable";
+import type { Awaitable } from "@/concurrent/Awaitable";
 import { Runnable } from "@/concurrent/Runnable";
 import { Task } from "@/concurrent/Task";
-import type { Awaitable } from "@/types/Awaitable";
-import type { Nullable } from "@/types/Nullable";
 
 /**
  * Represents a deferred Maybe-bearing computation that may be async. Functorial

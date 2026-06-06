@@ -1,4 +1,4 @@
-import type { Awaitable } from "@/types/Awaitable";
+import type { Awaitable } from "@/concurrent/Awaitable";
 
 /**
  * The abstract base class for other abstractions over deferred computations.
