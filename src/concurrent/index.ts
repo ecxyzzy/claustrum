@@ -1,3 +1,4 @@
-export * from "@/concurrent/Runnable";
-export * from "@/concurrent/Task";
-export * from "@/concurrent/TaskMaybe";
+export type { Awaitable } from "@/concurrent/Awaitable";
+export { Runnable } from "@/concurrent/Runnable";
+export { Task } from "@/concurrent/Task";
+export { TaskMaybe } from "@/concurrent/TaskMaybe";
