@@ -1,7 +1,9 @@
-import type { Maybe } from "@/adt";
+import type { Maybe } from "@/adt/Maybe";
+import type { Try } from "@/adt/Try";
 import type { Awaitable } from "@/concurrent/Awaitable";
 import { Runnable } from "@/concurrent/Runnable";
 import { TaskMaybe } from "@/concurrent/TaskMaybe";
+import { TaskTry } from "@/concurrent/TaskTry";
 
 class _Task<T> extends Runnable<T> {
   constructor(task: () => Awaitable<T>) {
@@ -18,6 +20,10 @@ class _Task<T> extends Runnable<T> {
 
   liftMaybe<U>(this: Task<Maybe<U>>): TaskMaybe<U> {
     return TaskMaybe(async () => await this.task());
+  }
+
+  liftTry<U>(this: Task<Try<U>>): TaskTry<U> {
+    return TaskTry.from(async () => await this.task());
   }
 }
 

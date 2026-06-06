@@ -1,3 +1,5 @@
+import { TaskTry } from "@/concurrent/TaskTry";
+
 abstract class _Try<T> {
   abstract readonly type: "Success" | "Failure";
   abstract match<U>({ Success, Failure }: { Success: (x: T) => U; Failure: (x: unknown) => U }): U;
@@ -7,6 +9,10 @@ abstract class _Try<T> {
   abstract isSuccess(): this is Success<T>;
   abstract isFailure(): this is Failure<T>;
   abstract mapFailure<E = unknown>(f: (x: E) => unknown): Try<T>;
+
+  liftTask(this: Try<T>): TaskTry<T> {
+    return TaskTry.from(() => this);
+  }
 }
 
 class _Success<T> extends _Try<T> {
