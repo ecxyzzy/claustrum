@@ -33,6 +33,7 @@
     "./concurrent/Runnable": "./dist/concurrent/Runnable.mjs",
     "./concurrent/Task": "./dist/concurrent/Task.mjs",
     "./concurrent/TaskMaybe": "./dist/concurrent/TaskMaybe.mjs",
+    "./concurrent/TaskTry": "./dist/concurrent/TaskTry.mjs",
     "./numeric": "./dist/numeric.mjs",
     "./numeric/RichInt": "./dist/numeric/RichInt.mjs",
     "./numeric/SafeInt": "./dist/numeric/SafeInt.mjs",

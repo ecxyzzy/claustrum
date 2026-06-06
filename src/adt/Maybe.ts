@@ -1,10 +1,11 @@
 import { type Either, Left, Right } from "@/adt/Either";
 import { Seq } from "@/collections/Seq";
-import { TaskMaybe } from "@/concurrent/TaskMaybe";
+import { TaskMaybe } from "@/concurrent";
 import type { Nullable } from "@/types/Nullable";
 
 type Maybe_typeof = {
   <T>(this: void, x: Nullable<T>): Maybe<T>;
+  isJust<T>(this: void, m: Maybe<T>): m is Just<T>;
   isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
   unwrap<T>(this: void, m: Maybe<T>): T;
 };
@@ -22,16 +23,16 @@ type Maybe_typeof = {
 const UNZIP_MAX_ARITY = 4;
 
 /**
- * Represents an optional value.
+ * Represents an optional value. The constructor returns `Just` containing the
+ * provided value if it is not nullish, otherwise returns `Nothing`.
  */
 export type Maybe<T> = Just<T> | Nothing<T>;
-/**
- * Constructs a new `Maybe` instance. Returns `Just` containing the provided
- * value if it is not nullish, otherwise returns `Nothing`.
- */
 export const Maybe: Maybe_typeof = Object.assign(
   <T>(x: Nullable<T>): Maybe<T> => (x !== null && x !== undefined ? Just(x) : Nothing),
   {
+    isJust<T>(this: void, m: Maybe<T>): m is Just<T> {
+      return m.isJust();
+    },
     isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T> {
       return m.isNothing();
     },
