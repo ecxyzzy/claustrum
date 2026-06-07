@@ -2,18 +2,6 @@ import { Seq } from "@/collections/Seq";
 import { RichInt } from "@/numeric/RichInt";
 import type { SafeInt } from "@/numeric/SafeInt";
 
-type LazySeq_constructor = {
-  <T>(left: T | LazySeq<T>, right: LazySeq<T>): LazySeq<T>;
-};
-
-type LazySeq_static = {
-  empty<T>(this: void): LazySeq<T>;
-  from<T>(this: void, it: Iterable<T>): LazySeq<T>;
-  generate: typeof _LazySeq.generate;
-};
-
-type LazySeq_typeof = LazySeq_constructor & LazySeq_static;
-
 class _LazySeq<T> implements Iterable<T> {
   constructor(private readonly g: () => Generator<T, void, unknown>) {}
 
@@ -65,6 +53,23 @@ class _LazySeq<T> implements Iterable<T> {
   }
 }
 
+type LazySeq_constructor = {
+  <T>(left: T | LazySeq<T>, right: LazySeq<T>): LazySeq<T>;
+};
+
+type LazySeq_static = {
+  empty<T>(this: void): LazySeq<T>;
+  from<T>(this: void, it: Iterable<T>): LazySeq<T>;
+  generate: typeof _LazySeq.generate;
+};
+
+type LazySeq_typeof = LazySeq_constructor & LazySeq_static;
+
+/**
+ * Represents an immutable, ordered sequence whose elements are computed only
+ * when needed. `LazyList`s may be infinite; certain methods may not terminate
+ * if called on an infinite `LazyList`.
+ */
 export type LazySeq<T> = _LazySeq<T>;
 export const LazySeq: LazySeq_typeof = Object.assign<LazySeq_constructor, LazySeq_static>(
   (left, right) => {
