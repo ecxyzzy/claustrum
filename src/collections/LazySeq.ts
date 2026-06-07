@@ -31,6 +31,19 @@ class _LazySeq<T> implements Iterable<T> {
     });
   }
 
+  map<U>(f: (x: T) => U): LazySeq<U> {
+    const g = this.g();
+    return new _LazySeq(function* () {
+      for (const x of g) {
+        yield f(x);
+      }
+    });
+  }
+
+  tail(): LazySeq<T> {
+    return this.drop(1);
+  }
+
   take(n: SafeInt): LazySeq<T> {
     const nVal = RichInt(n).valueOf();
     if (nVal < 1) return LazySeq.empty();
@@ -44,11 +57,25 @@ class _LazySeq<T> implements Iterable<T> {
     });
   }
 
+  zip<U>(that: Iterable<U>): LazySeq<[T, U]> {
+    const thisIt = this[Symbol.iterator]();
+    const thatIt = that[Symbol.iterator]();
+    return new _LazySeq(function* () {
+      let thisEl = thisIt.next();
+      let thatEl = thatIt.next();
+      while (!thisEl.done && !thatEl.done) {
+        yield [thisEl.value, thatEl.value];
+        thisEl = thisIt.next();
+        thatEl = thatIt.next();
+      }
+    });
+  }
+
   toSeq(): Seq<T> {
     return Seq.from(this);
   }
 
-  [Symbol.iterator]() {
+  [Symbol.iterator](): Iterator<T, void, unknown> {
     return this.g();
   }
 }
