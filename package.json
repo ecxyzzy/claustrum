@@ -34,6 +34,7 @@
     "./concurrent/Awaitable": "./dist/concurrent/Awaitable.mjs",
     "./concurrent/Runnable": "./dist/concurrent/Runnable.mjs",
     "./concurrent/Task": "./dist/concurrent/Task.mjs",
+    "./concurrent/TaskEither": "./dist/concurrent/TaskEither.mjs",
     "./concurrent/TaskMaybe": "./dist/concurrent/TaskMaybe.mjs",
     "./concurrent/TaskTry": "./dist/concurrent/TaskTry.mjs",
     "./numeric": "./dist/numeric.mjs",
