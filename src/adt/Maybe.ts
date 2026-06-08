@@ -205,7 +205,7 @@ abstract class _Maybe<T> {
    *
    * This is {@link expect} with a preset error message.
    */
-  abstract unwrap(): T;
+  abstract unwrap(): NonNullable<T>;
 
   /**
    * If `this` is `Just` and `that` is `Nothing`, returns `this`; if `this` is
@@ -441,7 +441,7 @@ class _Just<T> extends _Maybe<T> {
     return !!f(this.v);
   }
 
-  unwrap(): T {
+  unwrap(): NonNullable<T> {
     return this.v;
   }
 
@@ -554,7 +554,7 @@ class _Nothing<T> extends _Maybe<T> {
     return false;
   }
 
-  unwrap(): T {
+  unwrap(): NonNullable<T> {
     throw new TypeError("unwrap called on instance of Nothing");
   }
 
