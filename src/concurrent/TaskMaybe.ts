@@ -9,6 +9,23 @@ class _TaskMaybe<T> extends Runnable<Maybe<T>> {
     super(task);
   }
 
+  expect(errLike: string | Error | (() => Awaitable<Error>)): Task<NonNullable<T>> {
+    return Task(async () => {
+      const res = await this.task();
+      if (res.isJust()) {
+        return res.unwrap();
+      }
+      switch (typeof errLike) {
+        case "string":
+          throw new Error(errLike);
+        case "object":
+          throw errLike;
+        case "function":
+          throw await errLike();
+      }
+    });
+  }
+
   filter(f: (x: T) => Awaitable<unknown>): TaskMaybe<T> {
     return TaskMaybe(async () => {
       const res = await this.task();
