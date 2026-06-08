@@ -1,3 +1,4 @@
+import { Maybe, Nothing } from "@/adt";
 import { Seq } from "@/collections/Seq";
 import { RichInt } from "@/numeric/RichInt";
 import type { SafeInt } from "@/numeric/SafeInt";
@@ -29,6 +30,15 @@ class _LazySeq<T> implements Iterable<T> {
         yield x;
       }
     });
+  }
+
+  find(f: (x: T) => unknown): Maybe<T> {
+    for (const x of this.g()) {
+      if (f(x)) {
+        return Maybe(x);
+      }
+    }
+    return Nothing;
   }
 
   map<U>(f: (x: T) => U): LazySeq<U> {
