@@ -22,16 +22,20 @@ class _Seq<T> implements Iterable<T> {
     return Maybe(this.xs.find(f));
   }
 
-  join(separator?: string): string {
+  join(this: Seq<string>, separator?: string): string {
     return this.xs.join(separator);
-  }
-
-  length(): number {
-    return this.xs.length;
   }
 
   map<U>(f: (x: T) => U): Seq<U> {
     return Seq.from(this.xs.map(f));
+  }
+
+  reduce<U>(op: (prev: U, curr: T) => U, z: U): U {
+    return this.xs.reduce(op, z);
+  }
+
+  size(): number {
+    return this.xs.length;
   }
 
   take(n: SafeInt): Seq<T> {
@@ -65,6 +69,7 @@ type Seq_constructor = {
 type Seq_static = {
   catMaybes<T>(s: Seq<Maybe<T>>): Seq<T>;
   from<T>(this: void, it: Iterable<T>): Seq<T>;
+  size<T>(s: Seq<T>): number;
 };
 
 type Seq_typeof = Seq_constructor & Seq_static;
@@ -76,4 +81,5 @@ export type Seq<T> = _Seq<T>;
 export const Seq: Seq_typeof = Object.assign<Seq_constructor, Seq_static>((...xs) => new _Seq(xs), {
   catMaybes: s => s.catMaybes(),
   from: it => new _Seq([...it]),
+  size: s => s.size(),
 });
