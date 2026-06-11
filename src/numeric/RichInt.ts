@@ -1,11 +1,20 @@
 import { type Maybe, Just, Nothing } from "@/adt/Maybe";
+import type { HashableObject } from "@/collections/HashableObject";
 import type { SafeInt } from "@/numeric/SafeInt";
 
-class _RichInt {
+class _RichInt implements HashableObject {
   constructor(private readonly n: number) {}
 
   valueOf(): number {
     return this.n;
+  }
+
+  hashCode(): number {
+    return this.n;
+  }
+
+  equals(that: unknown): boolean {
+    return that instanceof _RichInt && this.valueOf() === that.valueOf();
   }
 }
 
