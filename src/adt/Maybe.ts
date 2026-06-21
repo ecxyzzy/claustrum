@@ -582,7 +582,7 @@ type Maybe_constructor = {
 type Maybe_static = {
   isJust<T>(this: void, m: Maybe<T>): m is Just<T>;
   isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
-  unwrap<T>(this: void, m: Maybe<T>): T;
+  unwrap<T>(this: void, m: Maybe<T>): NonNullable<T>;
 };
 
 type Maybe_typeof = Maybe_constructor & Maybe_static;

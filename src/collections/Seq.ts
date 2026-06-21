@@ -6,7 +6,7 @@ import type { SafeInt } from "@/numeric";
 class _Seq<T> implements Iterable<T> {
   constructor(private readonly xs: readonly T[]) {}
 
-  catMaybes<U>(this: Seq<Maybe<U>>): Seq<U> {
+  catMaybes<U>(this: Seq<Maybe<U>>): Seq<NonNullable<U>> {
     return Seq.from(this.xs.filter(Maybe.isJust).map(Maybe.unwrap));
   }
 
