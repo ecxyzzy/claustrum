@@ -1,8 +1,11 @@
 import { Maybe, Nothing } from "@/adt";
 import { type Associative } from "@/collections/Associative";
 import type { Hashable } from "@/collections/Hashable";
+import type { HashableObject } from "@/collections/HashableObject";
 import { LazySeq } from "@/collections/LazySeq";
 import { Seq } from "@/collections/Seq";
+
+type HashableLiteral = "string" | "numerical" | "object";
 
 class _HashMap<K extends Hashable, V> implements Associative<K, V> {
   private readonly m: ReadonlyMap<number, [K, V][]>;
@@ -17,24 +20,18 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
     );
   }
 
+  private static _throw<K extends Hashable>(hash: number, type: HashableLiteral, k: K): never {
+    throw new Error(
+      `HashMap.get: found bucket with hash ${hash} for ${type} key ${k}, but key was not present in bucket`,
+    );
+  }
+
   private static _upsertInnerMap<K, V>(m: Map<number, [K, V][]>, hash: number, pair: [K, V]): void {
     if (m.has(hash)) {
       m.get(hash)!.push(pair);
     } else {
       m.set(hash, [pair]);
     }
-  }
-
-  private _getByKeyAndHash(k: K, hash: number): Maybe<V> {
-    const maybeBucket = this.m.get(hash);
-    if (!maybeBucket) return Nothing;
-    const maybePair = maybeBucket.find(([l]) => l === k);
-    if (!maybePair) {
-      throw new Error(
-        `HashMap.get: found bucket with hash ${hash} for key ${k}, but key was not present in bucket`,
-      );
-    }
-    return Maybe(maybePair[1]);
   }
 
   constructor(pairs: Iterable<[K, V]>) {
@@ -67,12 +64,25 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
 
   get(k: K): Maybe<V> {
     switch (typeof k) {
-      case "string":
-        return this._getByKeyAndHash(k, _HashMap._fnv1a(k));
-      case "number":
-        return this._getByKeyAndHash(k, k);
-      case "object":
-        return this._getByKeyAndHash(k, k.hashCode());
+      case "string": {
+        const hash = _HashMap._fnv1a(k);
+        const maybeBucket = this.m.get(hash);
+        if (!maybeBucket) return Nothing;
+        const maybePair = maybeBucket.find(([l]) => l === k);
+        return maybePair ? Maybe(maybePair[1]) : _HashMap._throw(hash, "string", k);
+      }
+      case "number": {
+        const maybeBucket = this.m.get(k);
+        if (!maybeBucket) return Nothing;
+        return maybeBucket[0] ? Maybe(maybeBucket[0][1]) : _HashMap._throw(k, "numerical", k);
+      }
+      case "object": {
+        const hash = k.hashCode();
+        const maybeBucket = this.m.get(hash) as [HashableObject, V][] | undefined;
+        if (!maybeBucket) return Nothing;
+        const maybePair = maybeBucket.find(([l]) => l.equals(k));
+        return maybePair ? Maybe(maybePair[1]) : _HashMap._throw(hash, "object", k);
+      }
     }
   }
 
