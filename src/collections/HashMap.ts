@@ -13,6 +13,8 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
 
   private static _fnv1a(s: string): number {
     return (
+      // FNV-1a operates bytewise so naive Unicode byte-slicing is the desired behaviour
+      // oxlint-disable-next-line typescript/no-misused-spread
       Seq(...s).reduce(
         (prev, curr) => Math.imul(prev ^ curr.charCodeAt(0), 0x01000193),
         0x811c9dc5,
@@ -22,7 +24,7 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
 
   private static _throw<K extends Hashable>(hash: number, type: HashableLiteral, k: K): never {
     throw new Error(
-      `HashMap.get: found bucket with hash ${hash} for ${type} key ${k}, but key was not present in bucket`,
+      `HashMap.get: found bucket with hash ${hash} for ${type} key ${k.toString()}, but key was not present in bucket`,
     );
   }
 
