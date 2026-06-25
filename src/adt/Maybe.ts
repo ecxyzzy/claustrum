@@ -1,6 +1,7 @@
+import type { Enumerable } from "@/abc/Enumerable";
 import { type Either, Left, Right } from "@/adt/Either";
 import type { Nullable } from "@/adt/Nullable";
-import { Seq } from "@/collections/Seq";
+import { Arr } from "@/collections/Arr";
 import { TaskMaybe } from "@/concurrent/TaskMaybe";
 
 /**
@@ -15,7 +16,7 @@ import { TaskMaybe } from "@/concurrent/TaskMaybe";
  */
 const UNZIP_MAX_ARITY = 4;
 
-abstract class _Maybe<T> {
+abstract class _Maybe<T> implements Enumerable<T> {
   abstract readonly type: "Just" | "Nothing";
 
   /**
@@ -191,6 +192,14 @@ abstract class _Maybe<T> {
   abstract orUndefined(): T | undefined;
 
   /**
+   * If `this` is `Just`, returns the operation applied to the initial value and
+   * the inner value (in that order), otherwise returns the initial value.
+   *
+   * @equiv `this.match({ Just: x => op(z, x), Nothing: () => z })`
+   */
+  abstract reduce<U>(op: (prev: U, curr: T) => U, z: U): U;
+
+  /**
    * Returns `true` if `this` is `Nothing` and the inner value matches the
    * provided predicate.
    *
@@ -214,6 +223,8 @@ abstract class _Maybe<T> {
    * @equiv `this.match({ Just: _ => that.match({ Just: _ => Nothing, Nothing: () => this }), Nothing: () => that.match({ Just: _ => that, Nothing: () => Nothing }) })`
    */
   abstract xor(that: Maybe<T>): Maybe<T>;
+
+  abstract [Symbol.iterator](): Iterator<NonNullable<T>>;
 
   // endregion
 
@@ -339,12 +350,12 @@ abstract class _Maybe<T> {
   abstract toRight<L>(l: L): Either<L, T>;
 
   /**
-   * If `this` is `Just`, returns a `Seq` of length 1 containing the inner
-   * value, otherwise returns an empty `Seq`.
+   * If `this` is `Just`, returns a `Arr` of length 1 containing the inner
+   * value, otherwise returns an empty `Arr`.
    *
-   * @equiv `this.match({ Just: x => Seq(x), Nothing: () => Seq() })`
+   * @equiv `this.match({ Just: x => Arr(x), Nothing: () => Arr() })`
    */
-  abstract toSeq(): Seq<T>;
+  abstract toSeq(): Arr<T>;
 
   // endregion
 }
@@ -437,6 +448,10 @@ class _Just<T> extends _Maybe<T> {
     return this.v;
   }
 
+  reduce<U>(op: (prev: U, curr: T) => U, z: U): U {
+    return op(z, this.v);
+  }
+
   some(f: (x: T) => unknown): boolean {
     return !!f(this.v);
   }
@@ -449,6 +464,13 @@ class _Just<T> extends _Maybe<T> {
     return that.isNothing() ? this : Nothing;
   }
 
+  [Symbol.iterator](): Iterator<NonNullable<T>> {
+    const v = this.v;
+    return (function* () {
+      yield v;
+    })();
+  }
+
   toLeft<R>(_r: R): Either<T, R> {
     return Left(this.v);
   }
@@ -457,8 +479,8 @@ class _Just<T> extends _Maybe<T> {
     return Right(this.v);
   }
 
-  toSeq(): Seq<T> {
-    return Seq(this.v);
+  toSeq(): Arr<T> {
+    return Arr(this.v);
   }
 }
 
@@ -550,6 +572,10 @@ class _Nothing<T> extends _Maybe<T> {
     return undefined;
   }
 
+  reduce<U>(op: (prev: U, curr: T) => U, z: U): U {
+    return z;
+  }
+
   some(): boolean {
     return false;
   }
@@ -562,6 +588,10 @@ class _Nothing<T> extends _Maybe<T> {
     return that;
   }
 
+  [Symbol.iterator](): Iterator<NonNullable<T>> {
+    return (function* () {})();
+  }
+
   toLeft<R>(r: R): Either<T, R> {
     return Right(r);
   }
@@ -570,8 +600,8 @@ class _Nothing<T> extends _Maybe<T> {
     return Left(l);
   }
 
-  toSeq(): Seq<T> {
-    return Seq();
+  toSeq(): Arr<T> {
+    return Arr();
   }
 }
 

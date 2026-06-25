@@ -1,13 +1,13 @@
+import type { Sequence } from "@/abc/Sequence";
 import { Maybe, Nothing } from "@/adt";
-import { type Associative } from "@/collections/Associative";
+import { Arr } from "@/collections/Arr";
 import type { Hashable } from "@/collections/Hashable";
 import type { HashableObject } from "@/collections/HashableObject";
-import { LazySeq } from "@/collections/LazySeq";
-import { Seq } from "@/collections/Seq";
+import { LazyList } from "@/collections/LazyList";
 
 type HashableLiteral = "string" | "numerical" | "object";
 
-class _HashMap<K extends Hashable, V> implements Associative<K, V> {
+class _HashMap<K extends Hashable, V> /* extends Associative<K, V> */ {
   private readonly m: ReadonlyMap<number, [K, V][]>;
   private readonly s: number;
 
@@ -15,7 +15,7 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
     return (
       // FNV-1a operates bytewise so naive Unicode byte-slicing is the desired behaviour
       // oxlint-disable-next-line typescript/no-misused-spread
-      Seq(...s).reduce(
+      Arr(...s).reduce(
         (prev, curr) => Math.imul(prev ^ curr.charCodeAt(0), 0x01000193),
         0x811c9dc5,
       ) >>> 0
@@ -37,6 +37,7 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
   }
 
   constructor(pairs: Iterable<[K, V]>) {
+    // super();
     const m = new Map<number, [K, V][]>();
     let s = 0;
     for (const pair of pairs) {
@@ -56,13 +57,25 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
     this.s = s;
   }
 
-  entries(): LazySeq<[K, V]> {
-    return LazySeq.from([...this]);
+  catMaybes(this: HashMap<K, Maybe<V>>): HashMap<K, NonNullable<V>> {
+    const pairs: [K, NonNullable<V>][] = [];
+    for (const kvs of this.m.values()) {
+      for (const [k, v] of kvs) {
+        for (const iv of v) {
+          pairs.push([k, iv]);
+        }
+      }
+    }
+    return new _HashMap(pairs);
   }
 
-  find(f: (x: [K, V]) => unknown): Maybe<[K, V]> {
-    return this.entries().find(f);
+  entries(): Sequence<[K, V]> {
+    return LazyList.from([...this]);
   }
+
+  // flatMap<K2 extends HashableObject, V2>(f: (x: [K, V]) => HashMap<K2, V2>): HashMap<K2, V2> {
+  //   return new _HashMap(this.entries().flatMap(x => f(x).entries()))
+  // }
 
   get(k: K): Maybe<V> {
     switch (typeof k) {
@@ -97,11 +110,11 @@ class _HashMap<K extends Hashable, V> implements Associative<K, V> {
   }
 
   [Symbol.iterator](): Iterator<[K, V]> {
-    const vss = this.m.values();
+    const kvss = this.m.values();
     return (function* () {
-      for (const vs of vss) {
-        for (const v of vs) {
-          yield v;
+      for (const kvs of kvss) {
+        for (const kv of kvs) {
+          yield kv;
         }
       }
     })();
@@ -113,7 +126,7 @@ type HashMap_constructor = {
 };
 
 type HashMap_static = {
-  entries<K extends Hashable, V>(h: HashMap<K, V>): LazySeq<[K, V]>;
+  entries<K extends Hashable, V>(h: HashMap<K, V>): Sequence<[K, V]>;
   size<K extends Hashable, V>(h: HashMap<K, V>): number;
 };
 

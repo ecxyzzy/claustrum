@@ -1,4 +1,4 @@
-import { Seq } from "@/collections/Seq";
+import { Arr } from "@/collections/Arr";
 
 abstract class _Validation<T> {
   abstract readonly type: "Valid" | "Invalid";
@@ -8,7 +8,7 @@ abstract class _Validation<T> {
     Invalid,
   }: {
     Valid: (x: T) => U;
-    Invalid: (xs: Seq<unknown>) => U;
+    Invalid: (xs: Arr<unknown>) => U;
   }): U;
 }
 
@@ -27,11 +27,11 @@ class _Valid<T> extends _Validation<T> {
 class _Invalid<T> extends _Validation<T> {
   readonly type = "Invalid";
 
-  constructor(private readonly es: Seq<unknown>) {
+  constructor(private readonly es: Arr<unknown>) {
     super();
   }
 
-  match<U>({ Invalid }: { Invalid: (x: Seq<unknown>) => U }): U {
+  match<U>({ Invalid }: { Invalid: (x: Arr<unknown>) => U }): U {
     return Invalid(this.es);
   }
 }
@@ -46,4 +46,4 @@ export type Valid<T> = _Valid<T>;
 export type Invalid<T> = _Invalid<T>;
 
 export const Valid = <T>(x: T): Validation<T> => new _Valid(x);
-export const Invalid = <T>(...errors: unknown[]): Validation<T> => new _Invalid(Seq(...errors));
+export const Invalid = <T>(...errors: unknown[]): Validation<T> => new _Invalid(Arr(...errors));

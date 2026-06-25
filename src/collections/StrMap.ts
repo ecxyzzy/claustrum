@@ -1,16 +1,17 @@
+import type { Sequence } from "@/abc/Sequence";
 import { Maybe } from "@/adt/Maybe";
-import type { Associative } from "@/collections/Associative";
-import { LazySeq } from "@/collections/LazySeq";
+import { LazyList } from "@/collections/LazyList";
 
-class _StrMap<V> implements Associative<string, V> {
+class _StrMap<V> /* extends Associative<string, V> */ {
   private readonly d: ReadonlyMap<string, V>;
 
   constructor(pairs: Iterable<[string, V]>) {
+    // super();
     this.d = new Map(pairs);
   }
 
-  entries(): LazySeq<[string, V]> {
-    return LazySeq.from([...this]);
+  entries(): Sequence<[string, V]> {
+    return LazyList.from([...this]);
   }
 
   find(f: (x: [string, V]) => unknown): Maybe<[string, V]> {
@@ -39,7 +40,7 @@ type StrMap_constructor = {
 };
 
 type StrMap_static = {
-  entries<V>(d: StrMap<V>): LazySeq<[string, V]>;
+  entries<V>(d: StrMap<V>): Sequence<[string, V]>;
   from<V>(record: Record<string, V>): StrMap<V>;
   size<V>(d: StrMap<V>): number;
 };
