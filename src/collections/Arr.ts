@@ -3,7 +3,7 @@ import type { Awaitable } from "@/concurrent/Awaitable";
 import { Task } from "@/concurrent/Task";
 import type { SafeInt } from "@/numeric";
 
-class _Seq<T> implements Iterable<T> {
+class _Arr<T> implements Iterable<T> {
   constructor(private readonly xs: readonly T[]) {}
 
   catMaybes<U>(this: Arr<Maybe<U>>): Arr<NonNullable<U>> {
@@ -62,24 +62,24 @@ class _Seq<T> implements Iterable<T> {
   }
 }
 
-type Seq_constructor = {
+type Arr_constructor = {
   <T>(...xs: T[]): Arr<T>;
 };
 
-type Seq_static = {
+type Arr_static = {
   catMaybes<T>(s: Arr<Maybe<T>>): Arr<T>;
   from<T>(this: void, it: Iterable<T>): Arr<T>;
   size<T>(s: Arr<T>): number;
 };
 
-type Seq_typeof = Seq_constructor & Seq_static;
+type Arr_typeof = Arr_constructor & Arr_static;
 
 /**
- * Represents an immutable, ordered sequence of elements that may be indexed.
+ * Represents an immutable array.
  */
-export type Arr<T> = _Seq<T>;
-export const Arr: Seq_typeof = Object.assign<Seq_constructor, Seq_static>((...xs) => new _Seq(xs), {
+export type Arr<T> = _Arr<T>;
+export const Arr: Arr_typeof = Object.assign<Arr_constructor, Arr_static>((...xs) => new _Arr(xs), {
   catMaybes: s => s.catMaybes(),
-  from: it => new _Seq([...it]),
+  from: it => new _Arr([...it]),
   size: s => s.size(),
 });

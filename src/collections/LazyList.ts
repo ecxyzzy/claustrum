@@ -145,7 +145,7 @@ class _LazyList<T> implements Sequence<T> {
     });
   }
 
-  toSeq(): Arr<T> {
+  toArr(): Arr<T> {
     return Arr.from(this);
   }
 

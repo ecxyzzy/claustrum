@@ -355,7 +355,7 @@ abstract class _Maybe<T> implements Enumerable<T> {
    *
    * @equiv `this.match({ Just: x => Arr(x), Nothing: () => Arr() })`
    */
-  abstract toSeq(): Arr<T>;
+  abstract toArr(): Arr<T>;
 
   // endregion
 }
@@ -479,7 +479,7 @@ class _Just<T> extends _Maybe<T> {
     return Right(this.v);
   }
 
-  toSeq(): Arr<T> {
+  toArr(): Arr<T> {
     return Arr(this.v);
   }
 }
@@ -600,7 +600,7 @@ class _Nothing<T> extends _Maybe<T> {
     return Left(l);
   }
 
-  toSeq(): Arr<T> {
+  toArr(): Arr<T> {
     return Arr();
   }
 }
