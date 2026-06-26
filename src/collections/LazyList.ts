@@ -1,11 +1,13 @@
-import type { Sequence } from "@/abc/Sequence";
+import { Sequence } from "@/abc/Sequence";
 import { Maybe, Nothing } from "@/adt";
 import { Arr } from "@/collections/Arr";
 import { RichInt } from "@/numeric/RichInt";
 import type { SafeInt } from "@/numeric/SafeInt";
 
-class _LazyList<T> implements Sequence<T> {
-  constructor(private readonly g: () => Generator<T, void, unknown>) {}
+class _LazyList<T> extends Sequence<T> {
+  constructor(private readonly g: () => Generator<T, void, unknown>) {
+    super();
+  }
 
   static generate(this: void, start: SafeInt): LazyList<RichInt>;
   static generate(this: void, start: SafeInt, step: SafeInt): LazyList<RichInt>;
@@ -15,6 +17,17 @@ class _LazyList<T> implements Sequence<T> {
     return new _LazyList(function* () {
       for (let i = startVal; ; i += stepVal) {
         yield RichInt(i);
+      }
+    });
+  }
+
+  catMaybes(this: LazyList<Maybe<T>>): LazyList<NonNullable<T>> {
+    const g = this.g();
+    return new _LazyList(function* () {
+      for (const mx of g) {
+        for (const x of mx) {
+          yield x;
+        }
       }
     });
   }
@@ -45,12 +58,7 @@ class _LazyList<T> implements Sequence<T> {
   }
 
   find(f: (x: T) => unknown): Maybe<T> {
-    for (const x of this.g()) {
-      if (f(x)) {
-        return Maybe(x);
-      }
-    }
-    return Nothing;
+    return Maybe([...this.g()].find(f));
   }
 
   flatMap<U>(f: (x: T) => LazyList<U>): LazyList<U> {
@@ -75,6 +83,10 @@ class _LazyList<T> implements Sequence<T> {
     return res.done ? Nothing : Maybe(res.value);
   }
 
+  join(separator?: string): string {
+    return [...this.g()].join(separator);
+  }
+
   map<U>(f: (x: T) => U): LazyList<U> {
     const g = this.g();
     return new _LazyList(function* () {
@@ -96,26 +108,11 @@ class _LazyList<T> implements Sequence<T> {
   }
 
   reduce<U>(op: (prev: U, curr: T) => U, z: U): U {
-    let r = z;
-    for (const x of this.g()) {
-      r = op(r, x);
-    }
-    return r;
+    return [...this.g()].reduce(op, z);
   }
 
   size(): number {
-    const it = this.g();
-    let el = it.next();
-    let i = 0;
-    while (!el.done) {
-      el = it.next();
-      ++i;
-    }
-    return i;
-  }
-
-  tail(): LazyList<T> {
-    return this.drop(1);
+    return [...this.g()].length;
   }
 
   take(n: SafeInt): LazyList<T> {
@@ -131,16 +128,22 @@ class _LazyList<T> implements Sequence<T> {
     });
   }
 
-  zip<U>(that: Iterable<U>): LazyList<[T, U]> {
-    const thisIt = this.g();
-    const thatIt = that[Symbol.iterator]();
+  zip<T1>(that: Iterable<T1>): LazyList<[T, T1]>;
+  zip<T1, T2>(that: Iterable<T1>, that2: Iterable<T2>): LazyList<[T, T1, T2]>;
+  zip<T1, T2, T3>(
+    that: Iterable<T1>,
+    that2: Iterable<T2>,
+    that3: Iterable<T3>,
+  ): LazyList<[T, T1, T2, T3]>;
+  zip(...thats: Iterable<unknown>[]): LazyList<unknown[]> {
+    const iters = [this[Symbol.iterator](), ...thats.map(that => that[Symbol.iterator]())];
     return new _LazyList(function* () {
-      let thisEl = thisIt.next();
-      let thatEl = thatIt.next();
-      while (!thisEl.done && !thatEl.done) {
-        yield [thisEl.value, thatEl.value];
-        thisEl = thisIt.next();
-        thatEl = thatIt.next();
+      for (
+        let els = iters.map(iter => iter.next());
+        els.every(el => !el.done);
+        els = iters.map(iter => iter.next())
+      ) {
+        yield els.map(el => el.value);
       }
     });
   }
@@ -162,10 +165,6 @@ type LazyList_static = {
   empty<T>(this: void): LazyList<T>;
   from<T>(this: void, it: Iterable<T>): LazyList<T>;
   generate: typeof _LazyList.generate;
-  /**
-   * Ta
-   */
-  withEmpty<T>(this: void, f: (xs: LazyList<T>) => LazyList<T>): LazyList<T>;
 };
 
 type LazyList_typeof = LazyList_constructor & LazyList_static;
@@ -198,6 +197,5 @@ export const LazyList: LazyList_typeof = Object.assign<LazyList_constructor, Laz
         }
       }),
     generate: _LazyList.generate,
-    withEmpty: f => f(LazyList.empty()),
   },
 );

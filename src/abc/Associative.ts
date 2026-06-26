@@ -4,6 +4,7 @@ import type { Sequence } from "@/abc/Sequence";
 import type { Maybe } from "@/adt";
 
 export abstract class Associative<K, V> extends CollectionLike<[K, V]> {
+  abstract catMaybes(this: Associative<K, Maybe<V>>): Associative<K, NonNullable<V>>;
   abstract entries(): Sequence<[K, V]>;
   override filter(f: (x: [K, V]) => unknown): Enumerable<[K, V]> {
     return this.entries().filter(f);

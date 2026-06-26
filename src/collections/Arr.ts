@@ -1,10 +1,13 @@
+import { Sequence } from "@/abc/Sequence";
 import { Maybe } from "@/adt/Maybe";
 import type { Awaitable } from "@/concurrent/Awaitable";
 import { Task } from "@/concurrent/Task";
 import type { SafeInt } from "@/numeric";
 
-class _Arr<T> implements Iterable<T> {
-  constructor(private readonly xs: readonly T[]) {}
+class _Arr<T> extends Sequence<T> {
+  constructor(private readonly xs: readonly T[]) {
+    super();
+  }
 
   catMaybes<U>(this: Arr<Maybe<U>>): Arr<NonNullable<U>> {
     return Arr.from(this.xs.filter(Maybe.isJust).map(Maybe.unwrap));
@@ -22,12 +25,28 @@ class _Arr<T> implements Iterable<T> {
     return Maybe(this.xs.find(f));
   }
 
-  join(this: Arr<string>, separator?: string): string {
+  flatMap<U>(f: (x: T) => Sequence<U>): Arr<U> {
+    return Arr.from(this.xs.flatMap(x => [...f(x)]));
+  }
+
+  forEach(f: (x: T) => void) {
+    this.xs.forEach(f);
+  }
+
+  head(): Maybe<T> {
+    return Maybe(this.xs[0]);
+  }
+
+  join(separator?: string): string {
     return this.xs.join(separator);
   }
 
   map<U>(f: (x: T) => U): Arr<U> {
     return Arr.from(this.xs.map(f));
+  }
+
+  narrow<U extends T>(f: (x: T) => x is U): Arr<U> {
+    return Arr.from(this.xs.filter(f));
   }
 
   reduce<U>(op: (prev: U, curr: T) => U, z: U): U {
@@ -51,6 +70,26 @@ class _Arr<T> implements Iterable<T> {
       }
       return Arr.from(ys);
     });
+  }
+
+  zip<T1>(that: Iterable<T1>): Arr<[T, T1]>;
+  zip<T1, T2>(that: Iterable<T1>, that2: Iterable<T2>): Arr<[T, T1, T2]>;
+  zip<T1, T2, T3>(
+    that: Iterable<T1>,
+    that2: Iterable<T2>,
+    that3: Iterable<T3>,
+  ): Arr<[T, T1, T2, T3]>;
+  zip(...thats: Iterable<unknown>[]): Arr<unknown[]> {
+    const iters = [this[Symbol.iterator](), ...thats.map(that => that[Symbol.iterator]())];
+    const ret: unknown[][] = [];
+    for (
+      let els = iters.map(iter => iter.next());
+      els.every(el => !el.done);
+      els = iters.map(iter => iter.next())
+    ) {
+      ret.push(els.map(el => el.value));
+    }
+    return Arr.from(ret);
   }
 
   toSorted(compareFn?: (a: T, b: T) => number): Arr<T> {
