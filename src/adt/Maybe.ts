@@ -44,6 +44,7 @@ abstract class _Maybe<T> implements Enumerable<T> {
    *
    * @equiv `this.match({ Just: x => !!f(x), Nothing: () => true })`
    */
+  abstract every<U extends T>(f: (x: T) => x is U): this is Maybe<U>;
   abstract every(f: (x: T) => unknown): boolean;
 
   /**
@@ -83,11 +84,11 @@ abstract class _Maybe<T> implements Enumerable<T> {
 
   /**
    * Runs the provided side-effectful function on the inner value if `this` is
-   * `Just`, otherwise does nothing. Consumes the `Maybe` in the process.
+   * `Just`, otherwise does nothing.
    *
    * @equiv `this.match({ Just: x => f(x), Nothing: () => {} })`
    */
-  abstract forEach(f: (x: T) => unknown): void;
+  abstract forEach(f: (x: T) => void): void;
 
   /**
    * Returns `true` if `this` is `Just` and the inner value is equal to the
@@ -192,13 +193,17 @@ abstract class _Maybe<T> implements Enumerable<T> {
   abstract reduce<U>(op: (prev: U, curr: T) => U, z: U): U;
 
   /**
-   * Returns `true` if `this` is `Nothing` and the inner value matches the
+   * Returns `true` if `this` is `Just` and the inner value matches the
    * provided predicate.
+   *
+   * Because `Maybe` is a degenerate {@link CollectionLike} of size <= 1,
+   * `.some()` can also narrow its type if a type guard is provided.
    *
    * This is the existential quantifier (`\exists`).
    *
    * @equiv `this.match({ Just: x => !!f(x), Nothing: () => false })`
    */
+  abstract some<U extends T>(f: (x: T) => x is U): this is Maybe<U>;
   abstract some(f: (x: T) => unknown): boolean;
 
   /**
@@ -367,7 +372,7 @@ class _Just<T> extends _Maybe<T> {
     return that;
   }
 
-  every(f: (x: T) => unknown): boolean {
+  every<U>(f: (x: T) => unknown): this is Maybe<U> {
     return !!f(this.v);
   }
 
@@ -387,7 +392,7 @@ class _Just<T> extends _Maybe<T> {
     return f(this.v);
   }
 
-  forEach(f: (x: T) => unknown): void {
+  forEach(f: (x: T) => void): void {
     f(this.v);
   }
 
@@ -440,7 +445,7 @@ class _Just<T> extends _Maybe<T> {
     return op(z, this.v);
   }
 
-  some(f: (x: T) => unknown): boolean {
+  some<U>(f: (x: T) => unknown): this is Maybe<U> {
     return !!f(this.v);
   }
 
@@ -483,7 +488,7 @@ class _Nothing<T> extends _Maybe<T> {
     return Nothing;
   }
 
-  every(): boolean {
+  every<U>(): this is Maybe<U> {
     return true;
   }
 
@@ -560,7 +565,7 @@ class _Nothing<T> extends _Maybe<T> {
     return z;
   }
 
-  some(): boolean {
+  some<U>(): this is Maybe<U> {
     return false;
   }
 

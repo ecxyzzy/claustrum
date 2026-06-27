@@ -17,6 +17,11 @@ class _Arr<T> extends Sequence<T> {
     return Arr.from(this.xs.slice(n.valueOf()));
   }
 
+  every<U extends T>(f: (x: T) => x is U): this is Arr<U>;
+  every(f: (x: T) => unknown): boolean {
+    return this.xs.every(f);
+  }
+
   filter(f: (x: T) => unknown): Arr<T> {
     return Arr.from(this.xs.filter(f));
   }
@@ -51,6 +56,10 @@ class _Arr<T> extends Sequence<T> {
 
   size(): number {
     return this.xs.length;
+  }
+
+  some(f: (x: T) => unknown): boolean {
+    return this.xs.some(f);
   }
 
   take(n: SafeInt): Arr<T> {

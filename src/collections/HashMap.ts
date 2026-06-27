@@ -1,13 +1,15 @@
-import type { Sequence } from "@/abc/Sequence";
+import { CollectionLike } from "@/abc/CollectionLike";
+import { MapLike } from "@/abc/MapLike";
 import { Maybe, Nothing } from "@/adt";
 import { Arr } from "@/collections/Arr";
 import type { Hashable } from "@/collections/Hashable";
 import type { HashableObject } from "@/collections/HashableObject";
 import { LazyList } from "@/collections/LazyList";
+import { StrMap } from "@/collections/StrMap";
 
 type HashableLiteral = "string" | "numerical" | "object";
 
-class _HashMap<K extends Hashable, V> /* extends Associative<K, V> */ {
+class _HashMap<K extends Hashable, V> extends MapLike<K, V> {
   private readonly m: ReadonlyMap<number, [K, V][]>;
   private readonly s: number;
 
@@ -37,7 +39,7 @@ class _HashMap<K extends Hashable, V> /* extends Associative<K, V> */ {
   }
 
   constructor(pairs: Iterable<[K, V]>) {
-    // super();
+    super();
     const m = new Map<number, [K, V][]>();
     let s = 0;
     for (const pair of pairs) {
@@ -69,13 +71,27 @@ class _HashMap<K extends Hashable, V> /* extends Associative<K, V> */ {
     return new _HashMap(pairs);
   }
 
-  entries(): Sequence<[K, V]> {
+  entries(): CollectionLike<[K, V]> {
     return LazyList.from([...this]);
   }
 
-  // flatMap<K2 extends HashableObject, V2>(f: (x: [K, V]) => HashMap<K2, V2>): HashMap<K2, V2> {
-  //   return new _HashMap(this.entries().flatMap(x => f(x).entries()))
-  // }
+  flatMap<U>(f: (x: [K, V]) => CollectionLike<U>): CollectionLike<U>;
+  flatMap<U>(f: (x: [K, V]) => CollectionLike<[string, U]>): StrMap<U>;
+  flatMap<K2 extends Hashable, V2>(f: (x: [K, V]) => CollectionLike<[K2, V2]>): HashMap<K2, V2>;
+  flatMap(
+    f: (x: [K, V]) => CollectionLike<unknown>,
+  ): CollectionLike<unknown> | MapLike<Hashable, unknown> {
+    const ys = this.entries().flatMap(f);
+    if (ys.every((y): y is [unknown, unknown] => Array.isArray(y))) {
+      if (ys.every((y): y is [string, unknown] => typeof y[0] === "string")) {
+        return StrMap(...ys);
+      }
+      if (ys.every((y): y is [Hashable, unknown] => !!y)) {
+        return HashMap(...ys);
+      }
+    }
+    return ys;
+  }
 
   get(k: K): Maybe<V> {
     switch (typeof k) {
@@ -105,8 +121,28 @@ class _HashMap<K extends Hashable, V> /* extends Associative<K, V> */ {
     return new _HashMap(this.entries().map(([k, v]) => [k, Maybe(v)]));
   }
 
+  map<U>(f: (x: [K, V]) => U): CollectionLike<U>;
+  map<U>(f: (x: [K, V]) => [string, U]): StrMap<U>;
+  map<K2 extends Hashable, V2>(f: (x: [K, V]) => [K2, V2]): HashMap<K2, V2>;
+  map(f: (x: [K, V]) => unknown): CollectionLike<unknown> | MapLike<Hashable, unknown> {
+    const ys = this.entries().map(f);
+    if (ys.every((y): y is [unknown, unknown] => Array.isArray(y))) {
+      if (ys.every((y): y is [string, unknown] => typeof y[0] === "string")) {
+        return StrMap(...ys);
+      }
+      if (ys.every((y): y is [Hashable, unknown] => !!y)) {
+        return HashMap(...ys);
+      }
+    }
+    return ys;
+  }
+
   size(): number {
     return this.s;
+  }
+
+  toStrMap(this: HashMap<string, V>): StrMap<V> {
+    return StrMap(...this.entries());
   }
 
   [Symbol.iterator](): Iterator<[K, V]> {
@@ -126,7 +162,7 @@ type HashMap_constructor = {
 };
 
 type HashMap_static = {
-  entries<K extends Hashable, V>(h: HashMap<K, V>): Sequence<[K, V]>;
+  entries<K extends Hashable, V>(h: HashMap<K, V>): CollectionLike<[K, V]>;
   size<K extends Hashable, V>(h: HashMap<K, V>): number;
 };
 

@@ -46,6 +46,16 @@ class _LazyList<T> extends Sequence<T> {
     });
   }
 
+  every<U extends T>(f: (x: T) => x is U): this is LazyList<U>;
+  every(f: (x: T) => unknown): boolean {
+    for (const x of this.g()) {
+      if (!f(x)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   filter<U extends T>(f: (x: T) => x is U): LazyList<U>;
   filter(f: (x: T) => unknown): LazyList<T>;
   filter(f: (x: T) => unknown): LazyList<T> {
@@ -60,7 +70,12 @@ class _LazyList<T> extends Sequence<T> {
   }
 
   find(f: (x: T) => unknown): Maybe<T> {
-    return Maybe([...this.g()].find(f));
+    for (const x of this.g()) {
+      if (f(x)) {
+        return Maybe(x);
+      }
+    }
+    return Nothing;
   }
 
   flatMap<U>(f: (x: T) => LazyList<U>): LazyList<U> {
@@ -104,6 +119,15 @@ class _LazyList<T> extends Sequence<T> {
 
   size(): number {
     return [...this.g()].length;
+  }
+
+  some(f: (x: T) => unknown): boolean {
+    for (const x of this.g()) {
+      if (f(x)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   take(n: SafeInt): LazyList<T> {
@@ -155,6 +179,7 @@ type LazyList_constructor = {
 type LazyList_static = {
   empty<T>(this: void): LazyList<T>;
   from<T>(this: void, it: Iterable<T>): LazyList<T>;
+  fromIter<T>(this: void, iter: IterableIterator<T>): LazyList<T>;
   generate: typeof _LazyList.generate;
 };
 
@@ -184,6 +209,12 @@ export const LazyList: LazyList_typeof = Object.assign<LazyList_constructor, Laz
     from: it =>
       new _LazyList(function* () {
         for (const x of it) {
+          yield x;
+        }
+      }),
+    fromIter: iter =>
+      new _LazyList(function* () {
+        for (const x of iter) {
           yield x;
         }
       }),
