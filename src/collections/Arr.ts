@@ -45,10 +45,6 @@ class _Arr<T> extends Sequence<T> {
     return Arr.from(this.xs.map(f));
   }
 
-  narrow<U extends T>(f: (x: T) => x is U): Arr<U> {
-    return Arr.from(this.xs.filter(f));
-  }
-
   reduce<U>(op: (prev: U, curr: T) => U, z: U): U {
     return this.xs.reduce(op, z);
   }

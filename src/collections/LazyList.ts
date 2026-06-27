@@ -46,6 +46,8 @@ class _LazyList<T> extends Sequence<T> {
     });
   }
 
+  filter<U extends T>(f: (x: T) => x is U): LazyList<U>;
+  filter(f: (x: T) => unknown): LazyList<T>;
   filter(f: (x: T) => unknown): LazyList<T> {
     const g = this.g();
     return new _LazyList(function* () {
@@ -92,17 +94,6 @@ class _LazyList<T> extends Sequence<T> {
     return new _LazyList(function* () {
       for (const x of g) {
         yield f(x);
-      }
-    });
-  }
-
-  narrow<U extends T>(f: (x: T) => x is U): LazyList<U> {
-    const g = this.g();
-    return new _LazyList(function* () {
-      for (const x of g) {
-        if (f(x)) {
-          yield x;
-        }
       }
     });
   }

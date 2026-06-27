@@ -6,6 +6,9 @@ import type { Maybe } from "@/adt";
 export abstract class Associative<K, V> extends CollectionLike<[K, V]> {
   abstract catMaybes(this: Associative<K, Maybe<V>>): Associative<K, NonNullable<V>>;
   abstract entries(): Sequence<[K, V]>;
+  override filter<K2 extends K, V2 extends V>(
+    f: (x: [K, V]) => x is [K2, V2],
+  ): Enumerable<[K2, V2]>;
   override filter(f: (x: [K, V]) => unknown): Enumerable<[K, V]> {
     return this.entries().filter(f);
   }

@@ -60,6 +60,7 @@ abstract class _Maybe<T> implements Enumerable<T> {
    *
    * @equiv `this.match({ Just: x => (f(x) ? this : Nothing), Nothing: () => Nothing })`
    */
+  abstract filter<U extends T>(f: (x: T) => x is U): Maybe<U>;
   abstract filter(f: (x: T) => unknown): Maybe<T>;
 
   /**
@@ -144,15 +145,6 @@ abstract class _Maybe<T> implements Enumerable<T> {
    * @equiv `this.match({ Just: x => f(x), Nothing: () => g() })`
    */
   abstract mapOrElse<U>(g: () => U, f: (x: T) => U): U;
-
-  /**
-   * Returns a new `Maybe` containing the narrowed inner value if `this` is
-   * `Just` and the inner value matches the provided predicate, otherwise
-   * returns `Nothing`.
-   *
-   * @equiv `this.match({ Just: x => (f(x) ? Maybe(x) : Nothing), Nothing: () => Nothing })`
-   */
-  abstract narrow<U extends T>(f: (x: T) => x is U): Maybe<U>;
 
   /**
    * If `this` is `Just`, returns `this`, otherwise returns the other `Maybe`.
@@ -428,10 +420,6 @@ class _Just<T> extends _Maybe<T> {
     return f(this.v);
   }
 
-  narrow<U extends T>(f: (x: T) => x is U): Maybe<U> {
-    return f(this.v) ? Maybe(this.v) : Nothing;
-  }
-
   or(): Maybe<T> {
     return this;
   }
@@ -550,10 +538,6 @@ class _Nothing<T> extends _Maybe<T> {
 
   mapOrElse<U>(g: () => U): U {
     return g();
-  }
-
-  narrow<U extends T>(): Maybe<U> {
-    return Nothing;
   }
 
   or(that: Maybe<T>): Maybe<T> {
