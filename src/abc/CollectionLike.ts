@@ -9,4 +9,7 @@ export abstract class CollectionLike<T> extends Enumerable<T> {
   abstract map<U>(f: (x: T) => U): CollectionLike<U>;
   abstract size(): number;
   abstract some(f: (x: T) => unknown): boolean;
+  toJsArray(): T[] {
+    return [...this];
+  }
 }

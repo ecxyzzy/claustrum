@@ -347,7 +347,7 @@ abstract class _Maybe<T> implements Enumerable<T> {
   abstract toRight<L>(l: L): Either<L, T>;
 
   /**
-   * If `this` is `Just`, returns a `Arr` of length 1 containing the inner
+   * If `this` is `Just`, returns an `Arr` of length 1 containing the inner
    * value, otherwise returns an empty `Arr`.
    *
    * @equiv `this.match({ Just: x => Arr(x), Nothing: () => Arr() })`
@@ -355,6 +355,26 @@ abstract class _Maybe<T> implements Enumerable<T> {
   abstract toArr(): Arr<T>;
 
   // endregion
+
+  // region Static methods
+
+  /**
+   * If `cond` is truthy, returns a `Maybe` containing `x`, otherwise returns
+   * `Nothing`. Can be used in binary form (`when(cond, x)`) or curried unary
+   * form (`when(cond)(x)`); the latter is useful for passing to `map` etc.
+   */
+  static when<T>(this: void, cond: unknown): (x: Nullable<T>) => Maybe<T>;
+  static when<T>(this: void, cond: unknown, x: Nullable<T>): Maybe<T>;
+  static when<T>(
+    this: void,
+    cond: unknown,
+    ...args: Nullable<T>[]
+  ): ((x: Nullable<T>) => Maybe<T>) | Maybe<T> {
+    if (args.length === 0) {
+      return cond ? x => Maybe(x) : () => Nothing;
+    }
+    return cond ? Maybe(args[0]) : Nothing;
+  }
 }
 
 class _Just<T> extends _Maybe<T> {
@@ -601,6 +621,7 @@ type Maybe_constructor = {
 type Maybe_static = {
   isJust<T>(this: void, m: Maybe<T>): m is Just<T>;
   isNothing<T>(this: void, m: Maybe<T>): m is Nothing<T>;
+  when: typeof _Maybe.when;
   unwrap<T>(this: void, m: Maybe<T>): NonNullable<T>;
 };
 
@@ -616,6 +637,7 @@ export const Maybe: Maybe_typeof = Object.assign<Maybe_constructor, Maybe_static
   {
     isJust: m => m.isJust(),
     isNothing: m => m.isNothing(),
+    when: _Maybe.when,
     unwrap: m => m.unwrap(),
   },
 );

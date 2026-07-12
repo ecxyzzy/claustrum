@@ -27,7 +27,6 @@
     "./adt/Validation": "./dist/adt/Validation.mjs",
     "./collections": "./dist/collections.mjs",
     "./collections/Arr": "./dist/collections/Arr.mjs",
-    "./collections/FSet": "./dist/collections/FSet.mjs",
     "./collections/Hashable": "./dist/collections/Hashable.mjs",
     "./collections/HashableObject": "./dist/collections/HashableObject.mjs",
     "./collections/HashMap": "./dist/collections/HashMap.mjs",
