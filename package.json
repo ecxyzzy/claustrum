@@ -1,6 +1,6 @@
 {
   "name": "claustrum",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "An opinionated library for typed, fluent-style, immutable functional programming in TypeScript",
   "homepage": "https://github.com/ecxyzzy/claustrum#readme",
   "bugs": {
