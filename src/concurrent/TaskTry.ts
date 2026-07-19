@@ -43,6 +43,20 @@ class _TaskTry<T> extends Runnable<Try<T>> {
     });
   }
 
+  narrowOrElse<U extends T, E = unknown>(
+    f: (x: T) => x is U,
+    errorFactory: (x: T) => Awaitable<E>,
+  ): TaskTry<U> {
+    return new _TaskTry(async () => {
+      const res = await this.task();
+      if (res.isFailure()) {
+        return Failure<U>(res.failed().get());
+      }
+      const x = res.get();
+      return f(x) ? Success(x) : Failure(await errorFactory(x));
+    });
+  }
+
   unlift(): Task<Try<T>> {
     return Task(async () => await this.task());
   }
