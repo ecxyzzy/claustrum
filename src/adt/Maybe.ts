@@ -1,3 +1,4 @@
+import type { CollectionLike } from "@/abc/CollectionLike";
 import type { Enumerable } from "@/abc/Enumerable";
 import { type Either, Left, Right } from "@/adt/Either";
 import type { Nullable } from "@/adt/Nullable";
